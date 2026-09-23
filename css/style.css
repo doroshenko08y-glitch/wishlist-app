@@ -1,6 +1,3 @@
-/* ==========================================
-   Крок 2. Базовий reset
-   ========================================== */
 *,
 *::before,
 *::after {
@@ -12,14 +9,14 @@ body {
   font-family: system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.5;
-  color: #4a3f35;
-  background-color: #fdfbf7;
+  color: #b29174;
+  background-color: #ffeddb;
 }
 
 header {
-  background: linear-gradient(135deg, #f8d7da 0%, #f7d6c8 100%);
+  background: #eab1b676;
   padding: 2rem 1.5rem;
-  border-bottom: 2px solid #f0b7a4;
+  border-bottom: 2px solid #fdb4b2;
   text-align: center;
 }
 
@@ -81,7 +78,6 @@ section {
   box-shadow: 0 6px 14px rgba(140, 66, 81, 0.12);
 }
 
-.card h2,
 .card h3,
 .card-title {
   margin-top: 0;
@@ -115,8 +111,6 @@ section {
 
 .card--purchased .card-title,
 .card.purchased .card-title,
-.card--purchased h2,
-.card.purchased h2,
 .card--purchased h3,
 .card.purchased h3 {
   text-decoration: line-through;
@@ -131,8 +125,8 @@ aside {
   text-align: center;
 }
 
-aside .total-price,
-aside .amount {
+aside h2,
+aside p {
   font-size: 1.8rem;
   font-weight: bold;
   color: #8c4251;
