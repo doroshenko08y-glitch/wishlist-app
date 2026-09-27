@@ -7,14 +7,86 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <!--Шапка з назвою (список бажань)-->
+    <!-- Крок 2: Розмітка header з єдиним h1 та навігацією -->
+    <header>
+      <h1>Список бажань</h1>
+      <nav>
+        <ul>
+          <li><a href="#add-wish-section">Додати бажання</a></li>
+          <li><a href="#wish-list-section">Мої бажання</a></li>
+          <li><a href="#summary-aside">Підсумок</a></li>
+        </ul>
+      </nav>
+    </header>
 
-    <!--Форма додавання нового бажання-->
+    <main>
+      <section id="add-wish-section">
+        <h2>Додати бажання</h2>
+        <form action="#" method="post">
+          <div>
+            <label for="wish-title">Назва речі:</label>
+            <input
+              type="text"
+              id="wish-title"
+              name="wish-title"
+              required
+              placeholder="Наприклад, Навушники"
+            />
+          </div>
+          <div>
+            <label for="wish-price">Ціна (грн):</label>
+            <input
+              type="number"
+              id="wish-price"
+              name="wish-price"
+              min="0"
+              required
+              placeholder="1500"
+            />
+          </div>
+          <div>
+            <label for="wish-image">Зображення речі:</label>
+            <input
+              type="text"
+              id="wish-image"
+              name="wish-image"
+              placeholder="URL зображення"
+            />
+          </div>
+          <button type="submit">Додати до списку</button>
+        </form>
+      </section>
 
-    <!--Список бажаних речей-->
+      <section id="wish-list-section">
+        <h2>Мої бажання</h2>
 
-    <!--Блок підсумкової суми-->
+        <article class="card">
+          <h3 class="card-title">Бездротові навушники</h3>
+          <img
+            src="https://via.placeholder.com/150"
+            alt="Бездротові навушники чорного кольору"
+          />
+          <p>Ціна: 3 500 грн</p>
+        </article>
 
-    <!--Підвал-->
+        <article class="card card--purchased">
+          <h3 class="card-title">Механічна клавіатура</h3>
+          <img
+            src="https://via.placeholder.com/150"
+            alt="Механічна клавіатура з підсвічуванням"
+          />
+          <p>Ціна: 2 200 грн</p>
+        </article>
+      </section>
+    </main>
+
+    <aside id="summary-aside">
+      <h2>Підсумкова сума</h2>
+      <p>Загальна вартість усіх бажань: <strong>5 700 грн</strong></p>
+    </aside>
+
+    <footer>
+      <p>&copy; 2026 Навчальний проєкт «Список бажань».</p>
+    </footer>
   </body>
 </html>
