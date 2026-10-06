@@ -1,27 +1,71 @@
+/* ==========================================================================
+   Обґрунтування нечіткої вимоги:
+   «Має бути приємно додавати нові бажання»
+   
+   Процес додавання бажання має викликати позитивні емоції. Для кнопки
+   «Додати» обрано насичений рожево-малиновий акцентний колір (#b83256), який
+   виділяється на бежевому тлі, залишаючись у загальній палітрі.
+   При наведенні (hover) кнопка плавно піднімається (translateY(-2px)),
+   збільшується в масштабі (scale(1.02)) та створює м'яку рожеву тінь.
+   Це дає відчуття відгуку на дію користувача та робить взаємодію приємною.
+   ========================================================================== */
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+:root {
+  /* Палітра */
+  --bg-main: #fdf6f2;
+  --bg-card: #ffffff;
+  --bg-aside: #f9ece6;
+  --text-main: #4a2830;
+  --text-muted: #7d5a63;
+  --primary: #8c2641;
+  --primary-hover: #67192e;
+  --border-color: #ebd3ca;
+
+  /* Акцент для кнопки додавання */
+  --accent: #b83256;
+  --accent-hover: #962342;
+  --accent-shadow: rgba(184, 50, 86, 0.3);
+
+  /* Пріоритети */
+  --priority-low-bg: #f0d3c9;
+  --priority-low-text: #4a2830;
+  --priority-medium-bg: #c86d85;
+  --priority-medium-text: #ffffff;
+  --priority-high-bg: #8c2641;
+  --priority-high-text: #ffffff;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-size: 1rem;
-  line-height: 1.5;
-  color: #b29174;
-  background-color: #ffeddb;
+  line-height: 1.6;
+  color: var(--text-main);
+  background-color: var(--bg-main);
 }
 
 img {
   max-width: 100%;
   height: auto;
+  border-radius: 6px;
 }
 
 .site-header {
-  background: #eab1b676;
-  padding: 1.5rem 1rem;
-  border-bottom: 2px solid #fdb4b2;
+  background: #f5dcd3;
+  padding: 1.25rem 1rem;
+  border-bottom: 2px solid var(--border-color);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -30,9 +74,10 @@ img {
 
 .site-header h1 {
   margin: 0;
-  font-size: 2rem;
-  color: #8c4251;
+  font-size: 1.875rem;
+  color: var(--primary);
   text-align: center;
+  font-weight: 800;
 }
 
 nav ul.nav-list {
@@ -46,22 +91,119 @@ nav ul.nav-list {
 }
 
 nav a {
-  color: #8c4251;
+  color: var(--primary);
   text-decoration: none;
   font-weight: 600;
-  transition: color 0.2s ease;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
-nav a:hover {
-  color: #d4a359;
+nav a:hover,
+nav a:focus-visible {
+  color: var(--primary-hover);
+  background-color: rgba(140, 38, 65, 0.08);
+}
+
+/* Секція форми додавання */
+.add-wish-section {
+  background-color: var(--bg-card);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(140, 38, 65, 0.05);
+  margin-bottom: 2rem;
+}
+
+.add-wish-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+.wish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 450px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background-color: #fffaf8;
+  color: var(--text-main);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-shadow);
+}
+
+/* Кнопка "Додати" - Рожевий акцент та hover */
+.btn-add {
+  align-self: flex-start;
+  background-color: var(--accent);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 12px var(--accent-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-add:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 18px var(--accent-shadow);
+}
+
+.btn-add:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px var(--accent-shadow);
+}
+
+.btn-add:focus-visible {
+  outline: 3px solid #f4a6ba;
+  outline-offset: 2px;
 }
 
 main {
   padding: 1.5rem 1rem;
 }
 
-section {
-  margin-bottom: 2.5rem;
+section h2 {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 1.25rem;
 }
 
 .cards {
@@ -71,40 +213,76 @@ section {
 }
 
 .card {
-  padding: 14px;
-  border: 1px solid #e2d1c3;
-  border-radius: 10px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 10px rgba(140, 66, 81, 0.08);
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--bg-card);
+  box-shadow: 0 4px 12px rgba(140, 38, 65, 0.05);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 0.75rem;
   transition:
     transform 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
+    box-shadow 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 14px rgba(140, 66, 81, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(140, 38, 65, 0.12);
+}
+
+/* пріоритети */
+.priority-badge {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.priority-badge--low {
+  background-color: var(--priority-low-bg);
+  color: var(--priority-low-text);
+}
+
+.priority-badge--medium {
+  background-color: var(--priority-medium-bg);
+  color: var(--priority-medium-text);
+}
+
+.priority-badge--high {
+  background-color: var(--priority-high-bg);
+  color: var(--priority-high-text);
 }
 
 .card h3,
 .card-title {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  font-size: 1.25rem;
-  color: #8c4251;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
 }
 
-.card p {
+.card-price {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
   margin: 0.25rem 0;
 }
-
+/*
+.card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+*/
 .card--purchased {
-  opacity: 0.6;
-  background-color: #f7f3ee;
+  opacity: 0.65;
+  background-color: #f7ede8;
   box-shadow: none;
 }
 
@@ -112,42 +290,52 @@ section {
   text-decoration: line-through;
 }
 
-aside {
-  background-color: #fcefe6;
-  border: 1px solid #f4c2b3;
-  border-radius: 10px;
+aside.summary-box {
+  background-color: var(--bg-aside);
+  border: 2px solid #e8c4b8;
+  border-radius: 12px;
   padding: 1.5rem;
   margin: 0 1rem 2rem 1rem;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(140, 38, 65, 0.05);
 }
 
-aside h2 {
-  font-size: 1.4rem;
+aside.summary-box h2 {
+  font-size: 1.35rem;
   margin-top: 0;
-  color: #8c4251;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
 }
 
-aside p {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #8c4251;
-  margin: 0.5rem 0 0 0;
+aside.summary-box p {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+aside.summary-box .total-amount {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 0.5rem;
 }
 
 footer {
   padding: 1.5rem 1rem;
   text-align: center;
   font-size: 0.875rem;
-  color: #8d7b68;
-  border-top: 1px solid #ebd8cb;
-  background-color: #faefe7;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  background-color: #f2d9cf;
 }
 
 @media (min-width: 600px) {
   .site-header {
     flex-direction: row;
     justify-content: space-between;
-    padding: 2rem 2rem;
+    padding: 1.5rem 2rem;
   }
 
   .site-header h1 {
@@ -167,7 +355,7 @@ footer {
     padding: 2rem;
   }
 
-  aside {
+  aside.summary-box {
     margin: 0 2rem 2rem 2rem;
   }
 }
@@ -187,8 +375,10 @@ footer {
     padding: 0;
   }
 
-  aside {
+  aside.summary-box {
     margin: 0;
+    position: sticky;
+    top: 2rem;
   }
 
   .cards {
