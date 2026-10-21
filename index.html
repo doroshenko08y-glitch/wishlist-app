@@ -65,65 +65,15 @@
         <section id="wish-list-section">
           <h2>Мої бажання</h2>
 
-          <div class="cards">
+          <!-- Крок 1: Додано id="wishlist" до контейнера -->
+          <div class="cards" id="wishlist">
+            <!-- Статичний приклад для орієнтиру структури (буде видалено програмно) -->
             <article class="card">
               <span class="priority-badge priority-badge--medium"
                 >Середній пріоритет</span
               >
               <h3 class="card-title">Бездротові навушники</h3>
-              <img
-                src="https://via.placeholder.com/150"
-                alt="Бездротові навушники чорного кольору"
-              />
               <p class="card-price">3 500 грн</p>
-            </article>
-
-            <article class="card">
-              <span class="priority-badge priority-badge--high"
-                >Високий пріоритет</span
-              >
-              <h3 class="card-title">Кубик рубика</h3>
-              <img
-                src="https://via.placeholder.com/150"
-                alt="Кубик рубика GAN16 Maglev Max Aqualis (2026 Summer Limited Edition)"
-              />
-              <p class="card-price">5 000 грн</p>
-            </article>
-
-            <article class="card">
-              <span class="priority-badge priority-badge--low"
-                >Низький пріоритет</span
-              >
-              <h3 class="card-title">Брелок</h3>
-              <img
-                src="https://via.placeholder.com/150"
-                alt="Кубик-брелок GAN 330 10th Anniversary Edition"
-              />
-              <p class="card-price">400 грн</p>
-            </article>
-
-            <article class="card card--purchased">
-              <span class="priority-badge priority-badge--medium"
-                >Середній пріоритет</span
-              >
-              <h3 class="card-title">Кубик рубика</h3>
-              <img
-                src="https://via.placeholder.com/150"
-                alt="Кубик рубика GAN 14 M Maglev"
-              />
-              <p class="card-price">4 000 грн</p>
-            </article>
-
-            <article class="card card--purchased">
-              <span class="priority-badge priority-badge--low"
-                >Низький пріоритет</span
-              >
-              <h3 class="card-title">Механічна клавіатура</h3>
-              <img
-                src="https://via.placeholder.com/150"
-                alt="Механічна клавіатура з підсвічуванням"
-              />
-              <p class="card-price">2 200 грн</p>
             </article>
           </div>
         </section>
@@ -132,7 +82,8 @@
       <aside id="summary-aside" class="summary-box">
         <h2>Підсумкова сума</h2>
         <p>Загальна вартість усіх бажань:</p>
-        <span class="total-amount">15 100 грн</span>
+        <!-- Крок 9: Додано id="total-price" для динамічного оновлення -->
+        <p id="total-price" class="total-amount"></p>
       </aside>
     </div>
 

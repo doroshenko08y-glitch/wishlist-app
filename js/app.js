@@ -1,39 +1,112 @@
 console.log("js/app.js підключено");
 
+//Динамічне видалення статичних прикладів карток на початку скрипта
+const staticCards = document.querySelectorAll(".cards .card");
+staticCards.forEach((card) => card.remove());
+
 const wishlist = [
-  { title: "Бездротові навушники", price: 3500, priority: "medium" },
-  { title: "Кубик рубика", price: 5000, priority: "high" },
-  { title: "Брелок", price: 400, priority: "low" },
-  { title: "Кубик рубика", price: 4000, priority: "medium" },
-  { title: "Механічна клавіатура", price: 2200, priority: "low" },
+  {
+    title: "Бездротові навушники",
+    price: 3500,
+    priority: "medium",
+    image: "https://via.placeholder.com/150",
+  },
+  {
+    title: "Кубик рубика",
+    price: 5000,
+    priority: "high",
+    image: "https://via.placeholder.com/150",
+  },
+  {
+    title: "Брелок",
+    price: 400,
+    priority: "low",
+    image: "https://via.placeholder.com/150",
+  },
+  {
+    title: "Кубик рубика",
+    price: 4000,
+    priority: "medium",
+    image: "https://via.placeholder.com/150",
+  },
+  {
+    title: "Механічна клавіатура",
+    price: 2200,
+    priority: "low",
+    image: "https://via.placeholder.com/150",
+  },
 ];
 
-//Функція для обробки даних циклом та умовною класифікацією
-//Цикл for...of підсумовує загальну вартість, а умова класифікує бажання за пріоритетом
-function processWishlist(items) {
+//Вибір контейнера одразу після даних
+const listContainer = document.querySelector("#wishlist");
+
+//Функція рендеру
+function renderWishlist(items) {
   let totalCost = 0;
 
-  console.log("Аналіз списку бажань");
+  //Цикл для обходу масиву даних
+  items.forEach((item) => {
+    totalCost += item.price; //Підсумовуємо ціни
 
-  for (const item of items) {
-    totalCost += item.price; //Підсумовуємо загальну вартість
+    //Створення елемента article та вкладених елементів
+    const article = document.createElement("article");
+    article.classList.add("card");
 
-    //Умовна класифікація елементів
+    //Бейдж пріоритету (span)
+    const badgeSpan = document.createElement("span");
+    badgeSpan.classList.add("priority-badge");
+
+    //Додаємо відповідний модифікатор класу та текст залежно від пріоритету
     if (item.priority === "high") {
-      console.log(`[ВИСОКИЙ ПРІОРИТЕТ] ${item.title} — ${item.price} грн`);
+      badgeSpan.classList.add("priority-badge--high");
+      badgeSpan.textContent = "Високий пріоритет";
     } else if (item.priority === "medium") {
-      console.log(`[Середній пріоритет] ${item.title} — ${item.price} грн`);
+      badgeSpan.classList.add("priority-badge--medium");
+      badgeSpan.textContent = "Середній пріоритет";
     } else {
-      console.log(`[Низький пріоритет] ${item.title} — ${item.price} грн`);
+      badgeSpan.classList.add("priority-badge--low");
+      badgeSpan.textContent = "Низький пріоритет";
     }
-  }
 
-  console.log(`Загальна вартість усіх бажань: ${totalCost} грн`);
+    //Назва речі (h3)
+    const titleElem = document.createElement("h3");
+    titleElem.classList.add("card-title");
+    titleElem.textContent = item.title;
+
+    //Зображення (img) — плейсхолдер
+    const imgElem = document.createElement("img");
+    imgElem.src = item.image || "https://via.placeholder.com/150";
+    imgElem.alt = item.title;
+
+    //Ціна (p)
+    const priceElem = document.createElement("p");
+    priceElem.classList.add("card-price");
+    priceElem.textContent = `${item.price.toLocaleString()} грн`;
+
+    //Додавання атрибута data-priority та умовного класу priority-high на саму картку (якщо потрібно)
+    article.setAttribute("data-priority", item.priority);
+    if (item.priority === "high") {
+      article.classList.add("priority-high");
+    }
+
+    //Збираємо структуру картки у правильному порядку
+    article.append(badgeSpan, titleElem, imgElem, priceElem);
+
+    //Додавання створеного елемента у контейнер всередині циклу
+    listContainer.append(article);
+  });
+
+  //Оновлення підсумкового елемента (p#total-price)
+  const totalPriceElem = document.querySelector("#total-price");
+  if (totalPriceElem) {
+    totalPriceElem.textContent = `${totalCost.toLocaleString()} грн`;
+  }
 }
 
-processWishlist(wishlist);
+//Виклик функції рендеру одразу після її оголошення
+renderWishlist(wishlist);
 
-//Стрілкова функція для перевірки, чи вписується річ у бюджет
+// Додаткова логіка перевірки бюджету
 const withinBudget = (price, budget) => price <= budget;
 
 const currentBudget = 4000;
