@@ -40,6 +40,7 @@
                 type="number"
                 id="wish-price"
                 placeholder="1500"
+                min="0"
                 required
               />
             </div>
@@ -65,7 +66,7 @@
         <section id="wish-list-section">
           <h2>Мої бажання</h2>
 
-          <!-- Крок 1: Додано id="wishlist" до контейнера -->
+          <!-- Додано id="wishlist" до контейнера -->
           <div class="cards" id="wishlist">
             <!-- Статичний приклад для орієнтиру структури (буде видалено програмно) -->
             <article class="card">
@@ -82,7 +83,7 @@
       <aside id="summary-aside" class="summary-box">
         <h2>Підсумкова сума</h2>
         <p>Загальна вартість усіх бажань:</p>
-        <!-- Крок 9: Додано id="total-price" для динамічного оновлення -->
+        <!-- Додано id="total-price" для динамічного оновлення -->
         <p id="total-price" class="total-amount"></p>
       </aside>
     </div>
