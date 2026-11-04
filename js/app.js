@@ -1,77 +1,118 @@
 console.log("js/app.js підключено");
 
-//Динамічне видалення статичних прикладів карток на початку скрипта
-const staticCards = document.querySelectorAll(".cards .card");
-staticCards.forEach((card) => card.remove());
+// Константа з URL ендпоінта для Варіанта 7 (Список бажань)
+const API_URL = "https://jsonplaceholder.typicode.com/todos?userId=2";
 
-const wishlist = [
-  {
-    title: "Бездротові навушники",
-    price: 3500,
-    priority: "medium",
-    image: "https://via.placeholder.com/150",
-  },
-  {
-    title: "Кубик рубика",
-    price: 5000,
-    priority: "high",
-    image: "https://via.placeholder.com/150",
-  },
-  {
-    title: "Брелок",
-    price: 400,
-    priority: "low",
-    image: "https://via.placeholder.com/150",
-  },
-  {
-    title: "Кубик рубика",
-    price: 4000,
-    priority: "medium",
-    image: "https://via.placeholder.com/150",
-  },
-  {
-    title: "Механічна клавіатура",
-    price: 2200,
-    priority: "low",
-    image: "https://via.placeholder.com/150",
-  },
-];
+const PRIORITIES = ["low", "medium", "high"];
+const PRIORITY_LABELS = {
+  high: "Високий пріоритет",
+  medium: "Середній пріоритет",
+  low: "Низький пріоритет",
+};
+const DEFAULT_PRICE = 1500;
+const CURRENT_BUDGET = 4000;
 
-//Вибір контейнера одразу після даних
+// Вибір контейнера
 const listContainer = document.querySelector("#wishlist");
 
-//Функція рендеру
+// Елемент для статусу завантаження / помилок перед списком
+const statusMessageElem = document.createElement("div");
+statusMessageElem.style.margin = "1rem 0";
+statusMessageElem.style.fontWeight = "600";
+listContainer.before(statusMessageElem);
+
+// Кнопка «Оновити»
+const refreshButton = document.createElement("button");
+refreshButton.textContent = "Оновити список";
+refreshButton.className = "btn-add";
+refreshButton.style.marginBottom = "1rem";
+refreshButton.style.display = "inline-block";
+listContainer.before(refreshButton);
+
+// Видалення статичних прикладів карток
+document.querySelectorAll(".cards .card").forEach((card) => card.remove());
+
+// Дані розділені: елементи з API та елементи, додані користувачем.
+// Це дозволяє не втрачати локальні дані при натисканні «Оновити».
+let apiItems = [];
+let localItems = [];
+// Загальний масив, який відображається
+let wishlist = [];
+
+function rebuildWishlist() {
+  wishlist = [...localItems, ...apiItems];
+}
+
+/**
+ * API повертає лише title і completed (+ id, userId).
+ * price і priority НЕ приходять з API, тому детерміновано
+ * розраховуються на клієнті на основі id (значення стабільні між оновленнями).
+ */
+function enrichTodo(todo) {
+  return {
+    ...todo,
+    // id для userId=2 це 21–40 → ціна 350–3500 грн
+    price: ((todo.id % 10) + 1) * 350,
+    // придбане → низький пріоритет, інакше за id
+    priority: todo.completed ? "low" : PRIORITIES[todo.id % 3],
+  };
+}
+
+// Підсумок: виконані бажання НЕ враховуються
+function updateTotal() {
+  const totalCost = wishlist
+    .filter((item) => !item.completed)
+    .reduce((sum, item) => sum + (item.price ?? DEFAULT_PRICE), 0);
+
+  const totalPriceElem = document.querySelector("#total-price");
+  if (totalPriceElem) {
+    totalPriceElem.textContent = `${totalCost.toLocaleString()} грн`;
+  }
+}
+
+// Функція рендеру
 function renderWishlist(items) {
-  let totalCost = 0;
+  listContainer.innerHTML = "";
 
-  //Цикл для обходу масиву даних
-  items.forEach((item) => {
-    totalCost += item.price; //Підсумовуємо ціни
+  items.forEach((item, index) => {
+    const itemPrice = item.price ?? DEFAULT_PRICE;
 
-    //Створення елемента article та вкладених елементів
-    const article = document.createElement("article");
-    article.classList.add("card");
-
-    //Бейдж пріоритету (span)
-    const badgeSpan = document.createElement("span");
-    badgeSpan.classList.add("priority-badge");
-
-    //Додаємо відповідний модифікатор класу та текст залежно від пріоритету
-    if (item.priority === "high") {
-      badgeSpan.classList.add("priority-badge--high");
-      badgeSpan.textContent = "Високий пріоритет";
-    } else if (item.priority === "medium") {
-      badgeSpan.classList.add("priority-badge--medium");
-      badgeSpan.textContent = "Середній пріоритет";
-    } else {
-      badgeSpan.classList.add("priority-badge--low");
-      badgeSpan.textContent = "Низький пріоритет";
+    let itemPriority = item.priority;
+    if (!itemPriority) {
+      itemPriority = item.completed ? "low" : "medium";
     }
 
-    //Select для зміни пріоритету вже доданого елемента
+    const article = document.createElement("article");
+    article.classList.add("card");
+    article.dataset.index = index;
+
+    // Чекбокс «Придбано»
+    const checkboxLabel = document.createElement("label");
+    checkboxLabel.classList.add("purchased-checkbox-label");
+    checkboxLabel.style.display = "flex";
+    checkboxLabel.style.alignItems = "center";
+    checkboxLabel.style.gap = "0.5rem";
+    checkboxLabel.style.fontSize = "0.85rem";
+    checkboxLabel.style.cursor = "pointer";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.classList.add("purchased-checkbox");
+    checkbox.checked = Boolean(item.completed);
+
+    checkboxLabel.append(checkbox, document.createTextNode("Придбано"));
+
+    // Бейдж пріоритету
+    const badgeSpan = document.createElement("span");
+    badgeSpan.classList.add(
+      "priority-badge",
+      `priority-badge--${itemPriority}`,
+    );
+    badgeSpan.textContent = PRIORITY_LABELS[itemPriority];
+
     const prioritySelect = document.createElement("select");
     prioritySelect.classList.add("priority-select");
-    prioritySelect.hidden = true; //Select прихований, показується по кліку на картку
+    prioritySelect.hidden = true;
     [
       ["low", "Низький"],
       ["medium", "Середній"],
@@ -80,56 +121,132 @@ function renderWishlist(items) {
       const option = document.createElement("option");
       option.value = value;
       option.textContent = label;
-      option.selected = value === item.priority;
+      option.selected = value === itemPriority;
       prioritySelect.append(option);
     });
 
-    //Назва речі (h3)
+    // Назва
     const titleElem = document.createElement("h3");
     titleElem.classList.add("card-title");
     titleElem.textContent = item.title;
 
-    //Зображення (img) — плейсхолдер
+    // Зображення
     const imgElem = document.createElement("img");
     imgElem.src = item.image || "https://via.placeholder.com/150";
     imgElem.alt = item.title;
 
-    //Ціна (p)
+    // Ціна
     const priceElem = document.createElement("p");
     priceElem.classList.add("card-price");
-    priceElem.textContent = `${item.price.toLocaleString()} грн`;
+    priceElem.textContent = `${itemPrice.toLocaleString()} грн`;
 
-    //Додавання атрибута data-priority та умовного класу priority-high на саму картку (якщо потрібно)
-    article.setAttribute("data-priority", item.priority);
-    if (item.priority === "high") {
+    article.setAttribute("data-priority", itemPriority);
+    if (itemPriority === "high") {
       article.classList.add("priority-high");
     }
+    if (item.completed) {
+      article.classList.add("card--purchased");
+    }
 
-    //Збираємо структуру картки у правильному порядку
-    article.append(badgeSpan, prioritySelect, titleElem, imgElem, priceElem);
+    article.append(
+      badgeSpan,
+      checkboxLabel,
+      prioritySelect,
+      titleElem,
+      imgElem,
+      priceElem,
+    );
 
-    //Додавання створеного елемента у контейнер всередині циклу
     listContainer.append(article);
   });
 
-  //Оновлення підсумкового елемента (p#total-price)
-  const totalPriceElem = document.querySelector("#total-price");
-  if (totalPriceElem) {
-    totalPriceElem.textContent = `${totalCost.toLocaleString()} грн`;
+  updateTotal();
+}
+
+// Перевірка бюджету
+const withinBudget = (price, budget) => price <= budget;
+
+function checkBudget() {
+  console.log(`Перевірка доступності у межах бюджету (${CURRENT_BUDGET} грн)`);
+  for (const item of wishlist) {
+    if (item.completed) continue; // придбані не перевіряємо
+    const itemPrice = item.price ?? DEFAULT_PRICE;
+    if (withinBudget(itemPrice, CURRENT_BUDGET)) {
+      console.log(`Доступно: "${item.title}" за ${itemPrice} грн`);
+    } else {
+      console.log(`Занадто дорого: "${item.title}" за ${itemPrice} грн`);
+    }
   }
 }
 
-//Виклик функції рендеру одразу після її оголошення
-renderWishlist(wishlist);
+// Єдина точка оновлення відображення
+function refreshView() {
+  rebuildWishlist();
+  renderWishlist(wishlist);
+  checkBudget();
+}
 
-//Вибір форми та її полів
+/**
+ * Асинхронне завантаження даних з API
+ * API: https://jsonplaceholder.typicode.com/todos?userId=2
+ */
+async function loadData() {
+  statusMessageElem.textContent = "Завантаження списку бажань...";
+  statusMessageElem.style.color = "var(--primary)";
+  refreshButton.disabled = true;
+
+  try {
+    const response = await fetch(API_URL);
+
+    if (!response.ok) {
+      throw new Error(`Помилка HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Отримані дані з API:", data);
+
+    // Зберігаємо зміни користувача (completed / priority) для елементів API
+    const previousById = new Map(apiItems.map((item) => [item.id, item]));
+    apiItems = data.map((todo) => {
+      const enriched = enrichTodo(todo);
+      const prev = previousById.get(todo.id);
+      return prev
+        ? { ...enriched, completed: prev.completed, priority: prev.priority }
+        : enriched;
+    });
+
+    refreshView();
+
+    statusMessageElem.textContent =
+      wishlist.length === 0 ? "Список бажань порожній." : "";
+  } catch (error) {
+    console.error("Деталі помилки завантаження:", error);
+
+    // Повідомлення за варіантом показуємо для будь-якої помилки завантаження
+    statusMessageElem.textContent = "Список бажань недоступний офлайн.";
+    statusMessageElem.style.color = "#b83256";
+  } finally {
+    refreshButton.disabled = false;
+  }
+}
+
+// Початковий виклик
+loadData();
+
+// Повторний виклик loadData() по кнопці
+refreshButton.addEventListener("click", () => {
+  loadData();
+});
+
+// Форма та її поля
 const form = document.querySelector(".wish-form");
 const nameInput = document.querySelector("#wish-name");
 const priceInput = document.querySelector("#wish-price");
 const priorityInput = document.querySelector("#wish-priority");
 const imgInput = document.querySelector("#wish-img");
+const completedInput = document.querySelector("#wish-completed");
 
-//Додаткова валідація (input на price): від'ємне значення -> власне повідомлення
+// Валідація ціни: від'ємне значення
 priceInput.addEventListener("input", () => {
   if (priceInput.value !== "" && Number(priceInput.value) < 0) {
     priceInput.setCustomValidity("Ціна не може бути від'ємною");
@@ -139,7 +256,7 @@ priceInput.addEventListener("input", () => {
   priceInput.reportValidity();
 });
 
-//Обробник submit: додає нове бажання без перезавантаження сторінки
+// Submit: додає нове бажання без перезавантаження сторінки
 form.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -147,32 +264,45 @@ form.addEventListener("submit", (event) => {
   const price = Number(priceInput.value);
   const priority = priorityInput.value;
   const image = imgInput.value.trim();
+  const completed = completedInput ? completedInput.checked : false;
 
-  //Додаємо новий об'єкт у масив тієї ж форми, що й наявні елементи
-  wishlist.push({
+  // Нові елементи зберігаються окремо, тому «Оновити» їх не видаляє
+  localItems.unshift({
     title,
     price,
     priority,
     image: image || "https://via.placeholder.com/150",
+    completed,
   });
 
-  //Очищаємо контейнер і перемальовуємо список з оновленим масивом
-  listContainer.innerHTML = "";
-  renderWishlist(wishlist);
+  refreshView();
+  statusMessageElem.textContent = "";
 
   form.reset();
   priceInput.setCustomValidity("");
 });
 
-//Друга подія (делегування): change на priority вже доданого елемента.
-//Перефарбовуємо позначку без повного перерендеру.
+// Чекбокс «Придбано» (делегування)
+listContainer.addEventListener("change", (event) => {
+  const checkbox = event.target.closest(".purchased-checkbox");
+  if (!checkbox) return;
+
+  const article = checkbox.closest(".card");
+  const index = Number(article.dataset.index);
+
+  wishlist[index].completed = checkbox.checked;
+  article.classList.toggle("card--purchased", checkbox.checked);
+  updateTotal();
+});
+
+// Зміна пріоритету (делегування)
 listContainer.addEventListener("change", (event) => {
   const select = event.target.closest(".priority-select");
   if (!select) return;
 
   const article = select.closest(".card");
   const badge = article.querySelector(".priority-badge");
-  const index = Array.from(listContainer.children).indexOf(article);
+  const index = Number(article.dataset.index);
   const newPriority = select.value;
 
   wishlist[index].priority = newPriority;
@@ -183,11 +313,7 @@ listContainer.addEventListener("change", (event) => {
     "priority-badge--low",
   );
   badge.classList.add(`priority-badge--${newPriority}`);
-  badge.textContent = {
-    high: "Високий пріоритет",
-    medium: "Середній пріоритет",
-    low: "Низький пріоритет",
-  }[newPriority];
+  badge.textContent = PRIORITY_LABELS[newPriority];
 
   article.setAttribute("data-priority", newPriority);
   article.classList.toggle("priority-high", newPriority === "high");
@@ -195,8 +321,13 @@ listContainer.addEventListener("change", (event) => {
   select.hidden = true;
 });
 
+// Показ/приховування select по кліку на картку
 listContainer.addEventListener("click", (event) => {
-  if (event.target.closest(".priority-select")) return;
+  if (
+    event.target.closest(".priority-select") ||
+    event.target.closest(".purchased-checkbox-label")
+  )
+    return;
 
   const card = event.target.closest(".card");
   if (!card) return;
@@ -204,18 +335,3 @@ listContainer.addEventListener("click", (event) => {
   const select = card.querySelector(".priority-select");
   select.hidden = !select.hidden;
 });
-
-// Додаткова логіка перевірки бюджету
-const withinBudget = (price, budget) => price <= budget;
-
-const currentBudget = 4000;
-console.log(`Перевірка доступності у межах бюджету (${currentBudget} грн)`);
-
-for (const item of wishlist) {
-  const isAffordable = withinBudget(item.price, currentBudget);
-  if (isAffordable) {
-    console.log(`Доступно: "${item.title}" за ${item.price} грн`);
-  } else {
-    console.log(`Занадто дорого: "${item.title}" за ${item.price} грн`);
-  }
-}
