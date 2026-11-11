@@ -5,7 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Список бажань</title>
     <link rel="stylesheet" href="css/style.css" />
-    <script src="js/app.js" defer></script>
+
+    <!-- Крок 2: Підключення CDN-скриптів для React -->
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Підключаємо скрипт як babel-модуль -->
+    <script type="text/babel" src="js/app.js" defer></script>
   </head>
   <body>
     <header class="site-header">
@@ -21,9 +34,10 @@
 
     <div class="page-wrapper">
       <main>
+        <!-- Секція форми -->
         <section id="add-wish-section" class="add-wish-section">
           <h2>Додати бажання</h2>
-          <form class="wish-form">
+          <form id="wish-form">
             <div class="form-group">
               <label for="wish-name">Назва речі:</label>
               <input
@@ -33,7 +47,6 @@
                 required
               />
             </div>
-
             <div class="form-group">
               <label for="wish-price">Ціна (грн):</label>
               <input
@@ -44,7 +57,6 @@
                 required
               />
             </div>
-
             <div class="form-group">
               <label for="wish-priority">Пріоритет:</label>
               <select id="wish-priority">
@@ -53,38 +65,27 @@
                 <option value="high">Високий</option>
               </select>
             </div>
-
             <div class="form-group">
               <label for="wish-img">Зображення речі (URL):</label>
               <input type="url" id="wish-img" placeholder="URL зображення" />
             </div>
-
-            <button type="submit" class="btn-add">Додати до списку</button>
+            <button type="submit" class="btn-add" style="margin-top: 1rem">
+              Додати до списку
+            </button>
           </form>
         </section>
 
+        <!-- Крок 4, 5, 7, 8: Контейнер для React-компонентів-->
         <section id="wish-list-section">
           <h2>Мої бажання</h2>
-
-          <!-- Додано id="wishlist" до контейнера -->
-          <div class="cards" id="wishlist">
-            <!-- Статичний приклад для орієнтиру структури (буде видалено програмно) -->
-            <article class="card">
-              <span class="priority-badge priority-badge--medium"
-                >Середній пріоритет</span
-              >
-              <h3 class="card-title">Бездротові навушники</h3>
-              <p class="card-price">3 500 грн</p>
-            </article>
-          </div>
+          <div id="root"></div>
         </section>
       </main>
 
       <aside id="summary-aside" class="summary-box">
         <h2>Підсумкова сума</h2>
         <p>Загальна вартість усіх бажань:</p>
-        <!-- Додано id="total-price" для динамічного оновлення -->
-        <p id="total-price" class="total-amount"></p>
+        <p id="total-price" class="total-amount">0 грн</p>
       </aside>
     </div>
 
