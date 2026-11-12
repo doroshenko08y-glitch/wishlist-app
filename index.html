@@ -6,7 +6,7 @@
     <title>Список бажань</title>
     <link rel="stylesheet" href="css/style.css" />
 
-    <!-- Крок 2: Підключення CDN-скриптів для React -->
+    <!-- Підключення CDN-скриптів для React -->
     <script
       src="https://unpkg.com/react@18/umd/react.development.js"
       crossorigin
@@ -34,7 +34,7 @@
 
     <div class="page-wrapper">
       <main>
-        <!-- Секція форми -->
+        <!-- Секція форми додавання нового бажання -->
         <section id="add-wish-section" class="add-wish-section">
           <h2>Додати бажання</h2>
           <form id="wish-form">
@@ -66,8 +66,14 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="wish-img">Зображення речі (URL):</label>
-              <input type="url" id="wish-img" placeholder="URL зображення" />
+              <label for="wish-url"
+                >Посилання на товар або зображення (URL):</label
+              >
+              <input
+                type="url"
+                id="wish-url"
+                placeholder="https://example.com/item"
+              />
             </div>
             <button type="submit" class="btn-add" style="margin-top: 1rem">
               Додати до списку
@@ -75,7 +81,7 @@
           </form>
         </section>
 
-        <!-- Крок 4, 5, 7, 8: Контейнер для React-компонентів-->
+        <!-- Контейнер для React-компонентів -->
         <section id="wish-list-section">
           <h2>Мої бажання</h2>
           <div id="root"></div>

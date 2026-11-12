@@ -1,4 +1,4 @@
-// Крок 1: Обрано React через зручність декларативного керування станом та компонентами.
+// Обрано React через зручність декларативного керування станом та компонентами.
 console.log("js/app.js підключено");
 
 const API_URL = "https://jsonplaceholder.typicode.com/todos?userId=2";
@@ -11,43 +11,166 @@ const PRIORITY_LABELS = {
 const DEFAULT_PRICE = 1500;
 const CURRENT_BUDGET = 4000;
 
-// Допоміжна функція для збагачення даних з API
-function enrichTodo(todo) {
+// Константи для роботи з localStorage та IndexedDB (Варіант 7: wishes, keyPath: "id")
+const LS_STORAGE_KEY = "wishlist_items_ls";
+const LS_MIGRATED_FLAG = "wishlist_migrated_to_idb";
+const DB_NAME = "WishlistDB";
+const DB_VERSION = 1;
+const STORE_NAME = "wishes";
+
+// Допоміжна функція для приведення запису до актуальної моделі даних { id, title, price, url, purchased, priority }
+function normalizeWishItem(item) {
   return {
-    ...todo,
-    price: ((todo.id % 10) + 1) * 350,
-    priority: todo.completed ? "low" : PRIORITIES[todo.id % 3],
+    id: item.id ?? Date.now(),
+    title: item.title || item.name || "Без назви",
+    price: Number(item.price ?? DEFAULT_PRICE),
+    url: item.url || item.image || "https://via.placeholder.com/150",
+    purchased: Boolean(item.purchased ?? item.completed ?? false),
+    priority:
+      item.priority || (item.purchased || item.completed ? "low" : "medium"),
   };
 }
 
-// Крок 4: Створення компонента елемента списку WishItem
+// Допоміжна функція для збагачення даних з API відповідно до моделі даних
+function enrichTodo(todo) {
+  return normalizeWishItem({
+    id: todo.id,
+    title: todo.title,
+    price: ((todo.id % 10) + 1) * 350,
+    url: "https://via.placeholder.com/150",
+    purchased: todo.completed,
+    priority: todo.completed ? "low" : PRIORITIES[todo.id % 3],
+  });
+}
+
+// Зберігає масив бажань у localStorage у форматі JSON
+function saveToLocalStorage(items) {
+  try {
+    localStorage.setItem(LS_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    console.error("Помилка збереження у localStorage:", error);
+  }
+}
+
+// Завантажує та розбирає масив бажань із localStorage з обробкою помилок парсингу
+function loadFromLocalStorage() {
+  try {
+    const rawData = localStorage.getItem(LS_STORAGE_KEY);
+    if (!rawData) return [];
+    const parsed = JSON.parse(rawData);
+    return Array.isArray(parsed) ? parsed.map(normalizeWishItem) : [];
+  } catch (error) {
+    console.error("Помилка розбору даних із localStorage:", error);
+    return [];
+  }
+}
+
+// Відкриває з'єднання з базою даних IndexedDB та створює object store при першому запуску
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      reject(new Error("Ваш браузер не підтримує IndexedDB."));
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      // Створюємо сховище "wishes" із первинним ключем "id", якщо воно ще не існує
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject(
+        event.target.error ||
+          new Error("Не вдалося відкрити базу даних IndexedDB."),
+      );
+    };
+  });
+}
+
+// Додає новий або оновлює існуючий запис у сховищі IndexedDB (метод put)
+async function saveItemToDB(item) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.put(normalizeWishItem(item));
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Псевдоніми для чіткого розділення операцій створення та оновлення
+const addItem = saveItemToDB;
+const updateItem = saveItemToDB;
+
+// Отримує всі записи зі сховища "wishes" у режимі читання (readonly)
+async function getAllItems() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.getAll();
+
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Видаляє запис зі сховища "wishes" за його унікальним ідентифікатором id
+async function deleteItem(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.delete(id);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Компонент картки окремого бажання
 function WishItem({
   id,
-  name,
+  title,
   price,
   priority,
-  completed,
-  image,
-  onToggle,
+  purchased,
+  url,
+  onTogglePurchased,
   onChangePriority,
+  onDelete,
 }) {
   const [isSelectOpen, setIsSelectOpen] = React.useState(false);
 
-  const itemPriority = priority || (completed ? "low" : "medium");
+  const itemPriority = priority || (purchased ? "low" : "medium");
   const itemPrice = price ?? DEFAULT_PRICE;
 
   return (
     <article
       className={`card ${itemPriority === "high" ? "priority-high" : ""} ${
-        completed ? "card--purchased" : ""
+        purchased ? "card--purchased" : ""
       }`}
       data-priority={itemPriority}
       onClick={(e) => {
+        // Ігноруємо клік по картці, якщо користувач взаємодіє з елементами керування
         if (
           e.target.closest(".priority-select") ||
-          e.target.closest(".purchased-checkbox-label")
-        )
+          e.target.closest(".purchased-checkbox-label") ||
+          e.target.closest(".btn-delete")
+        ) {
           return;
+        }
         setIsSelectOpen(!isSelectOpen);
       }}
     >
@@ -65,14 +188,14 @@ function WishItem({
           cursor: "pointer",
         }}
       >
-        {/* Крок 6: Клік по чекбоксу викликає callback-prop onToggle */}
+        {/* Чекбокс позначення товару як придбаного (оновлює поле purchased через put) */}
         <input
           type="checkbox"
           className="purchased-checkbox"
-          checked={Boolean(completed)}
-          onChange={onToggle}
+          checked={Boolean(purchased)}
+          onChange={onTogglePurchased}
         />
-        Придбано
+        Куплено
       </label>
 
       <select
@@ -89,68 +212,193 @@ function WishItem({
         <option value="high">Високий</option>
       </select>
 
-      <h3 className="card-title">{name}</h3>
-      <img src={image || "https://via.placeholder.com/150"} alt={name} />
+      <h3 className="card-title">{title}</h3>
+      <img src={url || "https://via.placeholder.com/150"} alt={title} />
       <p className="card-price">{itemPrice.toLocaleString()} грн</p>
+
+      {/* Кнопка видалення товару зі списку (викликає deleteItem) */}
+      <button
+        type="button"
+        className="btn-delete"
+        onClick={() => onDelete(id)}
+        style={{
+          marginTop: "0.5rem",
+          padding: "0.35rem 0.75rem",
+          backgroundColor: "#b83256",
+          color: "#fff",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+          fontSize: "0.85rem",
+        }}
+      >
+        Видалити
+      </button>
     </article>
   );
 }
 
 // Головний компонент додатку
 function WishListApp() {
-  // Крок 3: Перенесення даних у реактивний стан useState
   const [wishlist, setWishlist] = React.useState([]);
   const [statusMessage, setStatusMessage] = React.useState(
     "Завантаження списку бажань...",
   );
+  const [dbErrorMessage, setDbErrorMessage] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Завантаження даних з API при монтуванні
-  const loadData = async () => {
+  // Синхронізує стан компонента зі сховищем IndexedDB та дублює в localStorage
+  const refreshFromIDB = async () => {
+    const items = await getAllItems();
+    // Сортуємо так, щоб найновіші (з більшим id) відображалися зверху
+    const sortedItems = [...items].sort((a, b) => b.id - a.id);
+    setWishlist(sortedItems);
+    saveToLocalStorage(sortedItems);
+    setStatusMessage(sortedItems.length === 0 ? "Список бажань порожній." : "");
+  };
+
+  // Ініціалізація даних: перевірка IndexedDB, одноразова міграція з localStorage або завантаження з API
+  const initStorage = async () => {
     setIsLoading(true);
-    setStatusMessage("Завантаження списку бажань...");
+    setStatusMessage("Ініціалізація сховища...");
+    try {
+      await openDB();
+      setDbErrorMessage("");
+
+      let idbItems = await getAllItems();
+      const isMigrated = localStorage.getItem(LS_MIGRATED_FLAG) === "true";
+
+      // Одноразова міграція даних із localStorage в IndexedDB, якщо сховище порожнє
+      if (!isMigrated && idbItems.length === 0) {
+        const lsItems = loadFromLocalStorage();
+        if (lsItems.length > 0) {
+          for (const item of lsItems) {
+            await addItem(item);
+          }
+          localStorage.setItem(LS_MIGRATED_FLAG, "true");
+          idbItems = await getAllItems();
+        }
+      }
+
+      // Якщо обидва локальні сховища порожні — завантажуємо початкові приклади з API
+      if (idbItems.length === 0) {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`Помилка HTTP: ${response.status}`);
+        const data = await response.json();
+        const apiItems = data.map(enrichTodo);
+
+        for (const item of apiItems) {
+          await addItem(item);
+        }
+        localStorage.setItem(LS_MIGRATED_FLAG, "true");
+      }
+
+      await refreshFromIDB();
+    } catch (error) {
+      console.error("Помилка роботи з IndexedDB:", error);
+      // Повідомлення користувачу при недоступності IndexedDB та перехід на резервний localStorage
+      setDbErrorMessage(
+        "Увага: база даних IndexedDB недоступна (можливо, увімкнено приватний режим). Дані тимчасово зберігаються лише в localStorage.",
+      );
+      const fallbackItems = loadFromLocalStorage();
+      setWishlist(fallbackItems);
+      setStatusMessage(
+        fallbackItems.length === 0 ? "Список бажань порожній." : "",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Примусове оновлення початкових даних із зовнішнього API
+  const handleReloadFromAPI = async () => {
+    setIsLoading(true);
+    setStatusMessage("Оновлення списку з сервера...");
     try {
       const response = await fetch(API_URL);
       if (!response.ok) throw new Error(`Помилка HTTP: ${response.status}`);
       const data = await response.json();
-
       const apiItems = data.map(enrichTodo);
-      setWishlist(apiItems);
-      setStatusMessage(apiItems.length === 0 ? "Список бажань порожній." : "");
+
+      for (const item of apiItems) {
+        await addItem(item);
+      }
+      setDbErrorMessage("");
+      await refreshFromIDB();
     } catch (error) {
       console.error("Деталі помилки:", error);
-      setStatusMessage("Список бажань недоступний офлайн.");
+      // Якщо це помилка доступу до IndexedDB, показуємо червоний банер
+      if (error.message && error.message.includes("IndexedDB")) {
+        setDbErrorMessage(
+          "Увага: база даних IndexedDB недоступна. Дані тимчасово зберігаються лише в localStorage.",
+        );
+        setStatusMessage("");
+      } else {
+        setStatusMessage("Список бажань недоступний офлайн.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   React.useEffect(() => {
-    loadData();
+    initStorage();
   }, []);
 
-  // Обробник зміни стану придбано (toggle)
-  const handleToggle = (id) => {
-    setWishlist((prevList) =>
-      prevList.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item,
-      ),
-    );
+  // Позначення «куплено» (put з оновленим полем purchased)
+  const handleTogglePurchased = async (item) => {
+    const updatedItem = { ...item, purchased: !item.purchased };
+    try {
+      await updateItem(updatedItem);
+      await refreshFromIDB();
+    } catch (error) {
+      console.error("Не вдалося оновити статус покупки в IndexedDB:", error);
+      setWishlist((prev) => {
+        const next = prev.map((el) => (el.id === item.id ? updatedItem : el));
+        saveToLocalStorage(next);
+        return next;
+      });
+    }
   };
 
-  // Обробник зміни пріоритету
-  const handleChangePriority = (id, newPriority) => {
-    setWishlist((prevList) =>
-      prevList.map((item) =>
-        item.id === id ? { ...item, priority: newPriority } : item,
-      ),
-    );
+  // Оновлення пріоритету бажання через put у IndexedDB
+  const handleChangePriority = async (id, newPriority) => {
+    const target = wishlist.find((item) => item.id === id);
+    if (!target) return;
+
+    const updatedItem = { ...target, priority: newPriority };
+    try {
+      await updateItem(updatedItem);
+      await refreshFromIDB();
+    } catch (error) {
+      console.error("Не вдалося оновити пріоритет в IndexedDB:", error);
+      setWishlist((prev) => {
+        const next = prev.map((el) => (el.id === id ? updatedItem : el));
+        saveToLocalStorage(next);
+        return next;
+      });
+    }
   };
 
-  // Розрахунок бюджету та оновлення DOM для підсумку
+  // Видалення товару зі списку (delete у IndexedDB)
+  const handleDeleteItem = async (id) => {
+    try {
+      await deleteItem(id);
+      await refreshFromIDB();
+    } catch (error) {
+      console.error("Не вдалося видалити запис з IndexedDB:", error);
+      setWishlist((prev) => {
+        const next = prev.filter((el) => el.id !== id);
+        saveToLocalStorage(next);
+        return next;
+      });
+    }
+  };
+
+  // Розрахунок бюджету та оновлення DOM для підсумку (враховуємо лише ще не куплені товари)
   React.useEffect(() => {
     const totalCost = wishlist
-      .filter((item) => !item.completed)
+      .filter((item) => !item.purchased)
       .reduce((sum, item) => sum + (item.price ?? DEFAULT_PRICE), 0);
 
     const totalPriceElem = document.querySelector("#total-price");
@@ -158,12 +406,11 @@ function WishListApp() {
       totalPriceElem.textContent = `${totalCost.toLocaleString()} грн`;
     }
 
-    // Перевірка бюджету в консолі
     console.log(
       `Перевірка доступності у межах бюджету (${CURRENT_BUDGET} грн)`,
     );
     for (const item of wishlist) {
-      if (item.completed) continue;
+      if (item.purchased) continue;
       const itemPrice = item.price ?? DEFAULT_PRICE;
       if (itemPrice <= CURRENT_BUDGET) {
         console.log(`Доступно: "${item.title}" за ${itemPrice} грн`);
@@ -178,24 +425,34 @@ function WishListApp() {
     const form = document.querySelector("#wish-form");
     if (!form) return;
 
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
       e.preventDefault();
       const nameInput = document.querySelector("#wish-name");
       const priceInput = document.querySelector("#wish-price");
       const priorityInput = document.querySelector("#wish-priority");
-      const imgInput = document.querySelector("#wish-img");
+      const urlInput = document.querySelector("#wish-url");
 
-      const newItem = {
-        id: Date.now(), // унікальний id для нових елементів
+      const newItem = normalizeWishItem({
+        id: Date.now(),
         title: nameInput.value.trim(),
         price: Number(priceInput.value),
         priority: priorityInput.value,
-        image: imgInput.value.trim() || "https://via.placeholder.com/150",
-        completed: false,
-      };
+        url: urlInput.value.trim() || "https://via.placeholder.com/150",
+        purchased: false,
+      });
 
-      setWishlist((prev) => [newItem, ...prev]);
-      setStatusMessage("");
+      try {
+        await addItem(newItem);
+        await refreshFromIDB();
+      } catch (error) {
+        console.error("Не вдалося додати запис в IndexedDB:", error);
+        setWishlist((prev) => {
+          const next = [newItem, ...prev];
+          saveToLocalStorage(next);
+          return next;
+        });
+      }
+
       form.reset();
     };
 
@@ -205,40 +462,60 @@ function WishListApp() {
 
   return (
     <div>
-      <div
-        style={{
-          margin: "1rem 0",
-          fontWeight: "600",
-          color: statusMessage.includes("недоступний")
-            ? "#b83256"
-            : "var(--primary)",
-        }}
-      >
-        {statusMessage}
-      </div>
+      {/* Повідомлення про помилку доступу до IndexedDB (якщо виникла) */}
+      {dbErrorMessage && (
+        <div
+          style={{
+            padding: "0.75rem 1rem",
+            marginBottom: "1rem",
+            backgroundColor: "#fde8e8",
+            color: "#9b1c1c",
+            border: "1px solid #f8b4b4",
+            borderRadius: "6px",
+            fontWeight: "500",
+          }}
+        >
+          {dbErrorMessage}
+        </div>
+      )}
+
+      {statusMessage && (
+        <div
+          style={{
+            margin: "1rem 0",
+            fontWeight: "600",
+            color: statusMessage.includes("недоступний")
+              ? "#b83256"
+              : "var(--primary)",
+          }}
+        >
+          {statusMessage}
+        </div>
+      )}
 
       <button
         className="btn-add"
         style={{ marginBottom: "1rem", display: "inline-block" }}
-        onClick={loadData}
+        onClick={handleReloadFromAPI}
         disabled={isLoading}
       >
-        Оновити список
+        оновити
       </button>
 
-      {/* Крок 5: Рендер циклом через .map() з унікальним key */}
+      {/* Рендер списку бажань із даними, отриманими з IndexedDB */}
       <div className="cards">
         {wishlist.map((item) => (
           <WishItem
             key={item.id}
             id={item.id}
-            name={item.title}
+            title={item.title}
             price={item.price}
             priority={item.priority}
-            completed={item.completed}
-            image={item.image}
-            onToggle={() => handleToggle(item.id)}
+            purchased={item.purchased}
+            url={item.url}
+            onTogglePurchased={() => handleTogglePurchased(item)}
             onChangePriority={handleChangePriority}
+            onDelete={handleDeleteItem}
           />
         ))}
       </div>
