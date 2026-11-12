@@ -522,6 +522,84 @@ function WishListApp() {
     </div>
   );
 }
+(function () {
+  const LS_BUDGET_KEY = "wishlist_current_budget";
+
+  function init() {
+    const totalEl = document.querySelector("#total-price");
+    const budgetInput = document.querySelector("#current-budget");
+    const fillEl = document.querySelector("#progress-fill");
+    const percentEl = document.querySelector("#progress-percent");
+    const hintEl = document.querySelector("#progress-hint");
+
+    if (!totalEl || !budgetInput || !fillEl || !percentEl) return;
+
+    let shownPercent = 0;
+
+    function getTotal() {
+      return Number(totalEl.textContent.replace(/\D/g, "")) || 0;
+    }
+
+    function animateNumber(from, to, duration = 800) {
+      const start = performance.now();
+      function frame(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        percentEl.textContent = Math.round(from + (to - from) * eased);
+        if (t < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function update() {
+      const total = getTotal();
+      const budget = Number(budgetInput.value) || 0;
+      const percent =
+        total > 0 ? Math.min(Math.round((budget / total) * 100), 100) : 0;
+
+      fillEl.style.width = percent + "%";
+      animateNumber(shownPercent, percent);
+      shownPercent = percent;
+      fillEl.classList.toggle("complete", percent >= 100);
+
+      if (hintEl) {
+        const left = Math.max(total - budget, 0);
+        hintEl.textContent =
+          total === 0
+            ? ""
+            : percent >= 100
+              ? "Бюджету достатньо для всіх бажань!"
+              : `Ще потрібно: ${left.toLocaleString("uk-UA")} грн`;
+      }
+
+      try {
+        localStorage.setItem(LS_BUDGET_KEY, String(budget));
+      } catch (e) {}
+    }
+
+    // Оновлення при введенні бюджету
+    budgetInput.addEventListener("input", update);
+
+    // Автооновлення, коли React змінює суму (додавання, видалення, "куплено")
+    new MutationObserver(update).observe(totalEl, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+
+    // Відновлення збереженого бюджету
+    try {
+      budgetInput.value = localStorage.getItem(LS_BUDGET_KEY) || "";
+    } catch (e) {}
+    update();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
 
 // Монтування React-додатку в корінь
 const rootElement = document.querySelector("#root");

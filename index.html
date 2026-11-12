@@ -6,7 +6,6 @@
     <title>Список бажань</title>
     <link rel="stylesheet" href="css/style.css" />
 
-    <!-- Підключення CDN-скриптів для React -->
     <script
       src="https://unpkg.com/react@18/umd/react.development.js"
       crossorigin
@@ -17,7 +16,6 @@
     ></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Підключаємо скрипт як babel-модуль -->
     <script type="text/babel" src="js/app.js" defer></script>
   </head>
   <body>
@@ -34,7 +32,6 @@
 
     <div class="page-wrapper">
       <main>
-        <!-- Секція форми додавання нового бажання -->
         <section id="add-wish-section" class="add-wish-section">
           <h2>Додати бажання</h2>
           <form id="wish-form">
@@ -81,7 +78,6 @@
           </form>
         </section>
 
-        <!-- Контейнер для React-компонентів -->
         <section id="wish-list-section">
           <h2>Мої бажання</h2>
           <div id="root"></div>
@@ -92,6 +88,28 @@
         <h2>Підсумкова сума</h2>
         <p>Загальна вартість усіх бажань:</p>
         <p id="total-price" class="total-amount">0 грн</p>
+
+        <form class="budget-box" id="budget-form" autocomplete="off">
+          <label for="current-budget">Поточний бюджет (грн):</label>
+          <div class="budget-row">
+            <input
+              type="number"
+              id="current-budget"
+              min="0"
+              step="100"
+              placeholder="Наприклад, 5000"
+              inputmode="numeric"
+            />
+          </div>
+        </form>
+
+        <p class="progress-label">
+          Накопичено на купівлю: <span id="progress-percent">0</span>%
+        </p>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p class="progress-hint" id="progress-hint"></p>
       </aside>
     </div>
 
