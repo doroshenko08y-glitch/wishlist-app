@@ -1,4 +1,3 @@
-// Обрано React через зручність декларативного керування станом та компонентами.
 console.log("js/app.js підключено");
 
 const API_URL = "https://jsonplaceholder.typicode.com/todos?userId=2";
@@ -9,16 +8,14 @@ const PRIORITY_LABELS = {
   low: "Низький пріоритет",
 };
 const DEFAULT_PRICE = 1500;
-const CURRENT_BUDGET = 4000;
 
-// Константи для роботи з localStorage та IndexedDB (Варіант 7: wishes, keyPath: "id")
 const LS_STORAGE_KEY = "wishlist_items_ls";
 const LS_MIGRATED_FLAG = "wishlist_migrated_to_idb";
+const LS_BUDGET_KEY = "wishlist_current_budget";
 const DB_NAME = "WishlistDB";
 const DB_VERSION = 1;
 const STORE_NAME = "wishes";
 
-// Допоміжна функція для приведення запису до актуальної моделі даних { id, title, price, url, purchased, priority }
 function normalizeWishItem(item) {
   return {
     id: item.id ?? Date.now(),
@@ -31,7 +28,6 @@ function normalizeWishItem(item) {
   };
 }
 
-// Допоміжна функція для збагачення даних з API відповідно до моделі даних
 function enrichTodo(todo) {
   return normalizeWishItem({
     id: todo.id,
@@ -43,7 +39,6 @@ function enrichTodo(todo) {
   });
 }
 
-// Зберігає масив бажань у localStorage у форматі JSON
 function saveToLocalStorage(items) {
   try {
     localStorage.setItem(LS_STORAGE_KEY, JSON.stringify(items));
@@ -52,7 +47,6 @@ function saveToLocalStorage(items) {
   }
 }
 
-// Завантажує та розбирає масив бажань із localStorage з обробкою помилок парсингу
 function loadFromLocalStorage() {
   try {
     const rawData = localStorage.getItem(LS_STORAGE_KEY);
@@ -65,7 +59,6 @@ function loadFromLocalStorage() {
   }
 }
 
-// Відкриває з'єднання з базою даних IndexedDB та створює object store при першому запуску
 function openDB() {
   return new Promise((resolve, reject) => {
     if (!("indexedDB" in window)) {
@@ -77,26 +70,20 @@ function openDB() {
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      // Створюємо сховище "wishes" із первинним ключем "id", якщо воно ще не існує
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: "id" });
       }
     };
 
-    request.onsuccess = (event) => {
-      resolve(event.target.result);
-    };
-
-    request.onerror = (event) => {
+    request.onsuccess = (event) => resolve(event.target.result);
+    request.onerror = (event) =>
       reject(
         event.target.error ||
           new Error("Не вдалося відкрити базу даних IndexedDB."),
       );
-    };
   });
 }
 
-// Додає новий або оновлює існуючий запис у сховищі IndexedDB (метод put)
 async function saveItemToDB(item) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -109,11 +96,9 @@ async function saveItemToDB(item) {
   });
 }
 
-// Псевдоніми для чіткого розділення операцій створення та оновлення
 const addItem = saveItemToDB;
 const updateItem = saveItemToDB;
 
-// Отримує всі записи зі сховища "wishes" у режимі читання (readonly)
 async function getAllItems() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -126,7 +111,6 @@ async function getAllItems() {
   });
 }
 
-// Видаляє запис зі сховища "wishes" за його унікальним ідентифікатором id
 async function deleteItem(id) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -163,7 +147,6 @@ function WishItem({
       }`}
       data-priority={itemPriority}
       onClick={(e) => {
-        // Ігноруємо клік по картці, якщо користувач взаємодіє з елементами керування
         if (
           e.target.closest(".priority-select") ||
           e.target.closest(".purchased-checkbox-label") ||
@@ -178,17 +161,7 @@ function WishItem({
         {PRIORITY_LABELS[itemPriority]}
       </span>
 
-      <label
-        className="purchased-checkbox-label"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          fontSize: "0.85rem",
-          cursor: "pointer",
-        }}
-      >
-        {/* Чекбокс позначення товару як придбаного (оновлює поле purchased через put) */}
+      <label className="purchased-checkbox-label">
         <input
           type="checkbox"
           className="purchased-checkbox"
@@ -216,7 +189,6 @@ function WishItem({
       <img src={url || "https://via.placeholder.com/150"} alt={title} />
       <p className="card-price">{itemPrice.toLocaleString()} грн</p>
 
-      {/* Кнопка видалення товару зі списку (викликає deleteItem) */}
       <button
         type="button"
         className="btn-delete"
@@ -238,6 +210,163 @@ function WishItem({
   );
 }
 
+// Форма додавання бажання
+function WishForm({ onAddWish }) {
+  const [name, setName] = React.useState("");
+  const [price, setPrice] = React.useState("");
+  const [priority, setPriority] = React.useState("medium");
+  const [url, setUrl] = React.useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    onAddWish({
+      id: Date.now(),
+      title: name.trim(),
+      price: price ? Number(price) : DEFAULT_PRICE,
+      priority,
+      url: url.trim() || "https://via.placeholder.com/150",
+      purchased: false,
+    });
+
+    setName("");
+    setPrice("");
+    setPriority("medium");
+    setUrl("");
+  };
+
+  return (
+    <form id="wish-form" onSubmit={handleSubmit}>
+      <div className="form-group">
+        <label htmlFor="wish-name">Назва речі:</label>
+        <input
+          type="text"
+          id="wish-name"
+          placeholder="Наприклад, Навушники"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="wish-price">Ціна (грн):</label>
+        <input
+          type="number"
+          id="wish-price"
+          placeholder="1500"
+          min="0"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="wish-priority">Пріоритет:</label>
+        <select
+          id="wish-priority"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+        >
+          <option value="low">Низький</option>
+          <option value="medium">Середній</option>
+          <option value="high">Високий</option>
+        </select>
+      </div>
+      <div className="form-group">
+        <label htmlFor="wish-url">
+          Посилання на товар або зображення (URL):
+        </label>
+        <input
+          type="url"
+          id="wish-url"
+          placeholder="https://example.com/item"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+      </div>
+      <button type="submit" className="btn-add" style={{ marginTop: "1rem" }}>
+        Додати до списку
+      </button>
+    </form>
+  );
+}
+
+// Сайдбар підсумків та бюджету
+function SummaryAside({ totalCost }) {
+  const [budget, setBudget] = React.useState(() => {
+    try {
+      return localStorage.getItem(LS_BUDGET_KEY) || "";
+    } catch (e) {
+      return "";
+    }
+  });
+
+  const numericBudget = Number(budget) || 0;
+  const percent =
+    totalCost > 0
+      ? Math.min(Math.round((numericBudget / totalCost) * 100), 100)
+      : 0;
+  const left = Math.max(totalCost - numericBudget, 0);
+
+  const handleBudgetChange = (e) => {
+    const val = e.target.value;
+    setBudget(val);
+    try {
+      localStorage.setItem(LS_BUDGET_KEY, val);
+    } catch (e) {}
+  };
+
+  return (
+    <aside id="summary-aside" className="summary-box">
+      <h2>Підсумкова сума</h2>
+      <p>Загальна вартість усіх бажань:</p>
+      <p id="total-price" className="total-amount">
+        {totalCost.toLocaleString()} грн
+      </p>
+
+      <form
+        className="budget-box"
+        id="budget-form"
+        autoComplete="off"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <label htmlFor="current-budget">Поточний бюджет (грн):</label>
+        <div className="budget-row">
+          <input
+            type="number"
+            id="current-budget"
+            min="0"
+            step="100"
+            placeholder="Наприклад, 5000"
+            inputMode="numeric"
+            value={budget}
+            onChange={handleBudgetChange}
+          />
+        </div>
+      </form>
+
+      <p className="progress-label">
+        Накопичено на купівлю: <span id="progress-percent">{percent}</span>%
+      </p>
+      <div className="progress-track">
+        <div
+          className={`progress-fill ${percent >= 100 ? "complete" : ""}`}
+          id="progress-fill"
+          style={{ width: `${percent}%` }}
+        ></div>
+      </div>
+      <p className="progress-hint" id="progress-hint">
+        {totalCost === 0
+          ? ""
+          : percent >= 100
+            ? "Бюджету достатньо для всіх бажань!"
+            : `Ще потрібно: ${left.toLocaleString("uk-UA")} грн`}
+      </p>
+    </aside>
+  );
+}
+
 // Головний компонент додатку
 function WishListApp() {
   const [wishlist, setWishlist] = React.useState([]);
@@ -247,17 +376,14 @@ function WishListApp() {
   const [dbErrorMessage, setDbErrorMessage] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Синхронізує стан компонента зі сховищем IndexedDB та дублює в localStorage
   const refreshFromIDB = async () => {
     const items = await getAllItems();
-    // Сортуємо так, щоб найновіші (з більшим id) відображалися зверху
     const sortedItems = [...items].sort((a, b) => b.id - a.id);
     setWishlist(sortedItems);
     saveToLocalStorage(sortedItems);
     setStatusMessage(sortedItems.length === 0 ? "Список бажань порожній." : "");
   };
 
-  // Ініціалізація даних: перевірка IndexedDB, одноразова міграція з localStorage або завантаження з API
   const initStorage = async () => {
     setIsLoading(true);
     setStatusMessage("Ініціалізація сховища...");
@@ -268,7 +394,6 @@ function WishListApp() {
       let idbItems = await getAllItems();
       const isMigrated = localStorage.getItem(LS_MIGRATED_FLAG) === "true";
 
-      // Одноразова міграція даних із localStorage в IndexedDB, якщо сховище порожнє
       if (!isMigrated && idbItems.length === 0) {
         const lsItems = loadFromLocalStorage();
         if (lsItems.length > 0) {
@@ -280,7 +405,6 @@ function WishListApp() {
         }
       }
 
-      // Якщо обидва локальні сховища порожні — завантажуємо початкові приклади з API
       if (idbItems.length === 0) {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error(`Помилка HTTP: ${response.status}`);
@@ -296,7 +420,6 @@ function WishListApp() {
       await refreshFromIDB();
     } catch (error) {
       console.error("Помилка роботи з IndexedDB:", error);
-      // Повідомлення користувачу при недоступності IndexedDB та перехід на резервний localStorage
       setDbErrorMessage(
         "Увага: база даних IndexedDB недоступна (можливо, увімкнено приватний режим). Дані тимчасово зберігаються лише в localStorage.",
       );
@@ -310,7 +433,6 @@ function WishListApp() {
     }
   };
 
-  // Примусове оновлення початкових даних із зовнішнього API
   const handleReloadFromAPI = async () => {
     setIsLoading(true);
     setStatusMessage("Оновлення списку з сервера...");
@@ -327,7 +449,6 @@ function WishListApp() {
       await refreshFromIDB();
     } catch (error) {
       console.error("Деталі помилки:", error);
-      // Якщо це помилка доступу до IndexedDB, показуємо червоний банер
       if (error.message && error.message.includes("IndexedDB")) {
         setDbErrorMessage(
           "Увага: база даних IndexedDB недоступна. Дані тимчасово зберігаються лише в localStorage.",
@@ -345,7 +466,6 @@ function WishListApp() {
     initStorage();
   }, []);
 
-  // Позначення «куплено» (put з оновленим полем purchased)
   const handleTogglePurchased = async (item) => {
     const updatedItem = { ...item, purchased: !item.purchased };
     try {
@@ -361,7 +481,6 @@ function WishListApp() {
     }
   };
 
-  // Оновлення пріоритету бажання через put у IndexedDB
   const handleChangePriority = async (id, newPriority) => {
     const target = wishlist.find((item) => item.id === id);
     if (!target) return;
@@ -380,7 +499,6 @@ function WishListApp() {
     }
   };
 
-  // Видалення товару зі списку (delete у IndexedDB)
   const handleDeleteItem = async (id) => {
     try {
       await deleteItem(id);
@@ -395,213 +513,97 @@ function WishListApp() {
     }
   };
 
-  // Розрахунок бюджету та оновлення DOM для підсумку (враховуємо лише ще не куплені товари)
-  React.useEffect(() => {
-    const totalCost = wishlist
+  const handleAddWish = async (newItem) => {
+    const normalized = normalizeWishItem(newItem);
+    try {
+      await addItem(normalized);
+      await refreshFromIDB();
+    } catch (error) {
+      console.error("Не вдалося додати запис в IndexedDB:", error);
+      setWishlist((prev) => {
+        const next = [normalized, ...prev];
+        saveToLocalStorage(next);
+        return next;
+      });
+    }
+  };
+
+  const totalCost = React.useMemo(() => {
+    return wishlist
       .filter((item) => !item.purchased)
       .reduce((sum, item) => sum + (item.price ?? DEFAULT_PRICE), 0);
-
-    const totalPriceElem = document.querySelector("#total-price");
-    if (totalPriceElem) {
-      totalPriceElem.textContent = `${totalCost.toLocaleString()} грн`;
-    }
-
-    console.log(
-      `Перевірка доступності у межах бюджету (${CURRENT_BUDGET} грн)`,
-    );
-    for (const item of wishlist) {
-      if (item.purchased) continue;
-      const itemPrice = item.price ?? DEFAULT_PRICE;
-      if (itemPrice <= CURRENT_BUDGET) {
-        console.log(`Доступно: "${item.title}" за ${itemPrice} грн`);
-      } else {
-        console.log(`Занадто дорого: "${item.title}" за ${itemPrice} грн`);
-      }
-    }
   }, [wishlist]);
 
-  // Обробник сабміту форми додавання нового бажання
-  React.useEffect(() => {
-    const form = document.querySelector("#wish-form");
-    if (!form) return;
-
-    const handleFormSubmit = async (e) => {
-      e.preventDefault();
-      const nameInput = document.querySelector("#wish-name");
-      const priceInput = document.querySelector("#wish-price");
-      const priorityInput = document.querySelector("#wish-priority");
-      const urlInput = document.querySelector("#wish-url");
-
-      const newItem = normalizeWishItem({
-        id: Date.now(),
-        title: nameInput.value.trim(),
-        price: Number(priceInput.value),
-        priority: priorityInput.value,
-        url: urlInput.value.trim() || "https://via.placeholder.com/150",
-        purchased: false,
-      });
-
-      try {
-        await addItem(newItem);
-        await refreshFromIDB();
-      } catch (error) {
-        console.error("Не вдалося додати запис в IndexedDB:", error);
-        setWishlist((prev) => {
-          const next = [newItem, ...prev];
-          saveToLocalStorage(next);
-          return next;
-        });
-      }
-
-      form.reset();
-    };
-
-    form.addEventListener("submit", handleFormSubmit);
-    return () => form.removeEventListener("submit", handleFormSubmit);
-  }, []);
-
   return (
-    <div>
-      {/* Повідомлення про помилку доступу до IndexedDB (якщо виникла) */}
-      {dbErrorMessage && (
-        <div
-          style={{
-            padding: "0.75rem 1rem",
-            marginBottom: "1rem",
-            backgroundColor: "#fde8e8",
-            color: "#9b1c1c",
-            border: "1px solid #f8b4b4",
-            borderRadius: "6px",
-            fontWeight: "500",
-          }}
-        >
-          {dbErrorMessage}
+    <div className="page-wrapper">
+      <main>
+        <section id="add-wish-section" class="add-wish-section">
+          <h2>Додати бажання</h2>
+          <WishForm onAddWish={handleAddWish} />
+        </section>
+
+        {/* Кнопка оновлення окремо під формою */}
+        <div style={{ margin: "1rem 0" }}>
+          <button
+            type="button"
+            className="btn-add"
+            onClick={handleReloadFromAPI}
+            disabled={isLoading}
+          >
+            {isLoading ? "Оновлення..." : "Оновити з API"}
+          </button>
         </div>
-      )}
 
-      {statusMessage && (
-        <div
-          style={{
-            margin: "1rem 0",
-            fontWeight: "600",
-            color: statusMessage.includes("недоступний")
-              ? "#b83256"
-              : "var(--primary)",
-          }}
-        >
-          {statusMessage}
-        </div>
-      )}
+        <section id="wish-list-section">
+          <h2>Мої бажання</h2>
 
-      <button
-        className="btn-add"
-        style={{ marginBottom: "1rem", display: "inline-block" }}
-        onClick={handleReloadFromAPI}
-        disabled={isLoading}
-      >
-        оновити
-      </button>
+          {dbErrorMessage && (
+            <div
+              style={{
+                padding: "0.75rem",
+                background: "#fde8e8",
+                color: "#9b1c1c",
+                marginBottom: "1rem",
+                borderRadius: "6px",
+              }}
+            >
+              {dbErrorMessage}
+            </div>
+          )}
 
-      {/* Рендер списку бажань із даними, отриманими з IndexedDB */}
-      <div className="cards">
-        {wishlist.map((item) => (
-          <WishItem
-            key={item.id}
-            id={item.id}
-            title={item.title}
-            price={item.price}
-            priority={item.priority}
-            purchased={item.purchased}
-            url={item.url}
-            onTogglePurchased={() => handleTogglePurchased(item)}
-            onChangePriority={handleChangePriority}
-            onDelete={handleDeleteItem}
-          />
-        ))}
-      </div>
+          {statusMessage && (
+            <div
+              style={{
+                margin: "1rem 0",
+                fontWeight: "600",
+                color: "var(--primary)",
+              }}
+            >
+              {statusMessage}
+            </div>
+          )}
+
+          <div className="cards">
+            {wishlist.map((item) => (
+              <WishItem
+                key={item.id}
+                {...item}
+                onTogglePurchased={() => handleTogglePurchased(item)}
+                onChangePriority={handleChangePriority}
+                onDelete={handleDeleteItem}
+              />
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* Сайдбар автоматично стане праворуч завдяки .page-wrapper { display: flex; } у вашому CSS */}
+      <SummaryAside totalCost={totalCost} />
     </div>
   );
 }
-(function () {
-  const LS_BUDGET_KEY = "wishlist_current_budget";
 
-  function init() {
-    const totalEl = document.querySelector("#total-price");
-    const budgetInput = document.querySelector("#current-budget");
-    const fillEl = document.querySelector("#progress-fill");
-    const percentEl = document.querySelector("#progress-percent");
-    const hintEl = document.querySelector("#progress-hint");
-
-    if (!totalEl || !budgetInput || !fillEl || !percentEl) return;
-
-    let shownPercent = 0;
-
-    function getTotal() {
-      return Number(totalEl.textContent.replace(/\D/g, "")) || 0;
-    }
-
-    function animateNumber(from, to, duration = 800) {
-      const start = performance.now();
-      function frame(now) {
-        const t = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - t, 3);
-        percentEl.textContent = Math.round(from + (to - from) * eased);
-        if (t < 1) requestAnimationFrame(frame);
-      }
-      requestAnimationFrame(frame);
-    }
-
-    function update() {
-      const total = getTotal();
-      const budget = Number(budgetInput.value) || 0;
-      const percent =
-        total > 0 ? Math.min(Math.round((budget / total) * 100), 100) : 0;
-
-      fillEl.style.width = percent + "%";
-      animateNumber(shownPercent, percent);
-      shownPercent = percent;
-      fillEl.classList.toggle("complete", percent >= 100);
-
-      if (hintEl) {
-        const left = Math.max(total - budget, 0);
-        hintEl.textContent =
-          total === 0
-            ? ""
-            : percent >= 100
-              ? "Бюджету достатньо для всіх бажань!"
-              : `Ще потрібно: ${left.toLocaleString("uk-UA")} грн`;
-      }
-
-      try {
-        localStorage.setItem(LS_BUDGET_KEY, String(budget));
-      } catch (e) {}
-    }
-
-    // Оновлення при введенні бюджету
-    budgetInput.addEventListener("input", update);
-
-    // Автооновлення, коли React змінює суму (додавання, видалення, "куплено")
-    new MutationObserver(update).observe(totalEl, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
-
-    // Відновлення збереженого бюджету
-    try {
-      budgetInput.value = localStorage.getItem(LS_BUDGET_KEY) || "";
-    } catch (e) {}
-    update();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
-})();
-
-// Монтування React-додатку в корінь
+// Монтування в єдиний загальний #root
 const rootElement = document.querySelector("#root");
 if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
