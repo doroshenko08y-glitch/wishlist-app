@@ -150,7 +150,8 @@ function WishItem({
         if (
           e.target.closest(".priority-select") ||
           e.target.closest(".purchased-checkbox-label") ||
-          e.target.closest(".btn-delete")
+          e.target.closest(".btn-delete") ||
+          e.target.closest("a")
         ) {
           return;
         }
@@ -185,7 +186,11 @@ function WishItem({
         <option value="high">Високий</option>
       </select>
 
-      <h3 className="card-title">{title}</h3>
+      <h3 className="card-title">
+        <a href={`#/wishes/${id}`} data-link>
+          {title}
+        </a>
+      </h3>
       <img src={url || "https://via.placeholder.com/150"} alt={title} />
       <p className="card-price">{itemPrice.toLocaleString()} грн</p>
 
@@ -367,6 +372,264 @@ function SummaryAside({ totalCost }) {
   );
 }
 
+// ===================================================================
+// РОУТИНГ (hash-based). Адреса виглядає як index.html#/wishes/5,
+// тому для перевірки не потрібен локальний сервер.
+// Таблиця маршрутів: шлях-патерн -> view-функція (React-компонент).
+// «:id» - параметр, його значення витягує matchRoute().
+// ===================================================================
+const routes = [
+  { path: "/", view: HomeView }, // список бажаних товарів
+  { path: "/wishes/:id", view: WishDetailsView }, // деталі товару (price, url)
+  { path: "/purchased", view: PurchasedView }, // фільтр purchased: true
+];
+
+// Поточний шлях із hash: "#/wishes/5?x=1" -> "/wishes/5"
+function getCurrentPath() {
+  const path = window.location.hash.slice(1).split("?")[0];
+  return path || "/";
+}
+
+// Порівнює шлях із патернами; повертає { route, params } або null
+function matchRoute(path) {
+  const pathParts = path.split("/").filter(Boolean);
+
+  for (const route of routes) {
+    const patternParts = route.path.split("/").filter(Boolean);
+    if (patternParts.length !== pathParts.length) continue;
+
+    const params = {};
+    try {
+      const isMatch = patternParts.every((part, i) => {
+        if (part.startsWith(":")) {
+          params[part.slice(1)] = decodeURIComponent(pathParts[i]);
+          return true;
+        }
+        return part === pathParts[i];
+      });
+      if (isMatch) return { route, params };
+    } catch (error) {
+      return null; // некоректне кодування в URL
+    }
+  }
+  return null;
+}
+
+// Клієнтська навігація: змінюємо hash -> спрацьовує hashchange
+function navigate(path) {
+  if (getCurrentPath() === path) return;
+  window.location.hash = path;
+}
+
+// Хук: стежить за hashchange (кнопки «назад»/«вперед») і
+// перехоплює кліки по посиланнях із атрибутом data-link
+function useCurrentPath() {
+  const [path, setPath] = React.useState(getCurrentPath);
+
+  React.useEffect(() => {
+    const handleHashChange = () => setPath(getCurrentPath());
+
+    const handleLinkClick = (e) => {
+      const link = e.target.closest("a[data-link]");
+      if (!link) return;
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      navigate(link.getAttribute("href").replace(/^#/, "") || "/");
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    document.addEventListener("click", handleLinkClick);
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      document.removeEventListener("click", handleLinkClick);
+    };
+  }, []);
+
+  return path;
+}
+
+function isHttpUrl(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch (error) {
+    return false;
+  }
+}
+
+// ---------- View-функції ----------
+
+// Сітка карток (спільна для «/» та «/purchased»)
+function WishCards({ items, handlers }) {
+  return (
+    <div className="cards">
+      {items.map((item) => (
+        <WishItem
+          key={item.id}
+          {...item}
+          onTogglePurchased={() => handlers.onTogglePurchased(item)}
+          onChangePriority={handlers.onChangePriority}
+          onDelete={handlers.onDelete}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Фільтр-чекбокс «Лише куплені»: увімкнено -> маршрут «/purchased», вимкнено -> «/»
+function PurchasedFilter({ checked, wishlist }) {
+  const purchasedCount = wishlist.filter((item) => item.purchased).length;
+
+  return (
+    <label className="filter-checkbox">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => navigate(e.target.checked ? "/purchased" : "/")}
+      />
+      Показати лише куплені ({purchasedCount})
+    </label>
+  );
+}
+
+// «/» - форма додавання + усі бажання
+function HomeView({
+  wishlist,
+  statusMessage,
+  isLoading,
+  onReload,
+  onAddWish,
+  handlers,
+}) {
+  return (
+    <>
+      <section id="add-wish-section" className="add-wish-section">
+        <h2>Додати бажання</h2>
+        <WishForm onAddWish={onAddWish} />
+      </section>
+
+      <div style={{ margin: "1rem 0" }}>
+        <button
+          type="button"
+          className="btn-add"
+          onClick={onReload}
+          disabled={isLoading}
+        >
+          {isLoading ? "Оновлення..." : "Оновити"}
+        </button>
+      </div>
+
+      <section id="wish-list-section">
+        <h2>Мої бажання</h2>
+        <PurchasedFilter checked={false} wishlist={wishlist} />
+        {statusMessage && <div className="status-message">{statusMessage}</div>}
+        <WishCards items={wishlist} handlers={handlers} />
+      </section>
+    </>
+  );
+}
+
+// «/purchased» - лише товари з purchased: true
+function PurchasedView({ wishlist, isReady, handlers }) {
+  const purchased = wishlist.filter((item) => item.purchased);
+
+  return (
+    <section id="purchased-section">
+      <h2>Куплені бажання</h2>
+      <PurchasedFilter checked={true} wishlist={wishlist} />
+      {!isReady ? (
+        <div className="status-message">Завантаження...</div>
+      ) : purchased.length === 0 ? (
+        <div className="status-message">Куплених товарів поки немає.</div>
+      ) : (
+        <WishCards items={purchased} handlers={handlers} />
+      )}
+    </section>
+  );
+}
+
+// «/wishes/:id» - деталі одного товару
+function WishDetailsView({ params, wishlist, isReady, handlers }) {
+  const item = wishlist.find((el) => String(el.id) === params.id);
+
+  if (!item) {
+    if (!isReady) {
+      return <div className="status-message">Завантаження...</div>;
+    }
+    return <NotFoundView message="Бажання з таким id не знайдено." />;
+  }
+
+  const priority = item.priority || "medium";
+
+  return (
+    <section id="wish-details" className="wish-details">
+      <a href="#/" data-link className="back-link">
+        ← До списку
+      </a>
+      <h2>{item.title}</h2>
+
+      <span className={`priority-badge priority-badge--${priority}`}>
+        {PRIORITY_LABELS[priority]}
+      </span>
+
+      <img src={item.url} alt={item.title} className="wish-details-img" />
+
+      <dl className="wish-details-list">
+        <dt>Ціна</dt>
+        <dd className="card-price">{item.price.toLocaleString()} грн</dd>
+
+        <dt>Посилання (url)</dt>
+        <dd>
+          {isHttpUrl(item.url) ? (
+            <a href={item.url} target="_blank" rel="noopener noreferrer">
+              {item.url}
+            </a>
+          ) : (
+            item.url
+          )}
+        </dd>
+
+        <dt>Статус</dt>
+        <dd>{item.purchased ? "Куплено" : "Ще не куплено"}</dd>
+      </dl>
+
+      <div className="wish-details-actions">
+        <button
+          type="button"
+          className="btn-add"
+          onClick={() => handlers.onTogglePurchased(item)}
+        >
+          {item.purchased ? "Позначити як не куплене" : "Позначити як куплене"}
+        </button>
+        <button
+          type="button"
+          className="btn-delete"
+          onClick={async () => {
+            await handlers.onDelete(item.id);
+            navigate("/");
+          }}
+        >
+          Видалити
+        </button>
+      </div>
+    </section>
+  );
+}
+
+// Сторінка «Не знайдено» (matchRoute() повернув null або немає запису)
+function NotFoundView({ message = "Такої сторінки не існує." }) {
+  return (
+    <section id="not-found">
+      <h2>Не знайдено</h2>
+      <p>{message}</p>
+      <a href="#/" data-link className="btn-add">
+        На головну
+      </a>
+    </section>
+  );
+}
+
 // Головний компонент додатку
 function WishListApp() {
   const [wishlist, setWishlist] = React.useState([]);
@@ -375,6 +638,8 @@ function WishListApp() {
   );
   const [dbErrorMessage, setDbErrorMessage] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  // true, коли початкове завантаження даних завершилось (потрібно для сторінки деталей)
+  const [isReady, setIsReady] = React.useState(false);
 
   const refreshFromIDB = async () => {
     const items = await getAllItems();
@@ -430,6 +695,7 @@ function WishListApp() {
       );
     } finally {
       setIsLoading(false);
+      setIsReady(true);
     }
   };
 
@@ -528,76 +794,53 @@ function WishListApp() {
     }
   };
 
+  const path = useCurrentPath();
+
+  // При зміні маршруту: прокрутка вгору + підсвічування активного пункту меню
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+    document.querySelectorAll("nav a[data-link]").forEach((link) => {
+      const target = link.getAttribute("href").replace(/^#/, "") || "/";
+      if (target === path) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  }, [path]);
+
+  const handlers = {
+    onTogglePurchased: handleTogglePurchased,
+    onChangePriority: handleChangePriority,
+    onDelete: handleDeleteItem,
+  };
+
   const totalCost = React.useMemo(() => {
     return wishlist
       .filter((item) => !item.purchased)
       .reduce((sum, item) => sum + (item.price ?? DEFAULT_PRICE), 0);
   }, [wishlist]);
 
+  // Вибір view за поточним шляхом
+  const match = matchRoute(path);
+  const View = match ? match.route.view : NotFoundView;
+  const viewProps = {
+    params: match ? match.params : {},
+    wishlist,
+    statusMessage,
+    isLoading,
+    isReady,
+    onReload: handleReloadFromAPI,
+    onAddWish: handleAddWish,
+    handlers,
+  };
+
   return (
     <div className="page-wrapper">
-      <main>
-        <section id="add-wish-section" class="add-wish-section">
-          <h2>Додати бажання</h2>
-          <WishForm onAddWish={handleAddWish} />
-        </section>
-
-        {/* Кнопка оновлення окремо під формою */}
-        <div style={{ margin: "1rem 0" }}>
-          <button
-            type="button"
-            className="btn-add"
-            onClick={handleReloadFromAPI}
-            disabled={isLoading}
-          >
-            {isLoading ? "Оновлення..." : "Оновити з API"}
-          </button>
-        </div>
-
-        <section id="wish-list-section">
-          <h2>Мої бажання</h2>
-
-          {dbErrorMessage && (
-            <div
-              style={{
-                padding: "0.75rem",
-                background: "#fde8e8",
-                color: "#9b1c1c",
-                marginBottom: "1rem",
-                borderRadius: "6px",
-              }}
-            >
-              {dbErrorMessage}
-            </div>
-          )}
-
-          {statusMessage && (
-            <div
-              style={{
-                margin: "1rem 0",
-                fontWeight: "600",
-                color: "var(--primary)",
-              }}
-            >
-              {statusMessage}
-            </div>
-          )}
-
-          <div className="cards">
-            {wishlist.map((item) => (
-              <WishItem
-                key={item.id}
-                {...item}
-                onTogglePurchased={() => handleTogglePurchased(item)}
-                onChangePriority={handleChangePriority}
-                onDelete={handleDeleteItem}
-              />
-            ))}
-          </div>
-        </section>
+      {/* Єдиний контейнер, куди рендеряться усі «сторінки» */}
+      <main id="app">
+        {dbErrorMessage && <div className="db-error">{dbErrorMessage}</div>}
+        <View {...viewProps} />
       </main>
 
-      {/* Сайдбар автоматично стане праворуч завдяки .page-wrapper { display: flex; } у вашому CSS */}
+      {/* Сайдбар підсумків видно на всіх маршрутах */}
       <SummaryAside totalCost={totalCost} />
     </div>
   );
