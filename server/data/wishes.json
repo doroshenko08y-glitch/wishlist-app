@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "title": "Бездротові навушники",
+    "price": 2400,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": false,
+    "priority": "high"
+  },
+  {
+    "id": 2,
+    "title": "Механічна клавіатура",
+    "price": 3200,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": false,
+    "priority": "medium"
+  },
+  {
+    "id": 3,
+    "title": "Рюкзак для ноутбука",
+    "price": 1800,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": true,
+    "priority": "low"
+  },
+  {
+    "id": 4,
+    "title": "Електронна книга",
+    "price": 4500,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": false,
+    "priority": "high"
+  },
+  {
+    "id": 5,
+    "title": "Настільна лампа",
+    "price": 950,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": true,
+    "priority": "low"
+  },
+  {
+    "id": 6,
+    "title": "Термокухоль",
+    "price": 650,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": false,
+    "priority": "medium"
+  },
+  {
+    "id": 7,
+    "title": "Портативна колонка",
+    "price": 2100,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": false,
+    "priority": "medium"
+  },
+  {
+    "id": 8,
+    "title": "Набір для малювання",
+    "price": 1200,
+    "url": "/assets/img/placeholder.svg",
+    "purchased": true,
+    "priority": "low"
+  }
+]

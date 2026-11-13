@@ -1,0 +1,590 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Палітра */
+  --bg-main: #fdf6f2;
+  --bg-card: #ffffff;
+  --bg-aside: #f9ece6;
+  --text-main: #4a2830;
+  --text-muted: #5f454b;
+  --primary: #8c2641;
+  --primary-hover: #67192e;
+  --border-color: #ebd3ca;
+
+  /* Акцент для кнопки додавання */
+  --accent: #b83256;
+  --accent-hover: #962342;
+  --accent-shadow: rgba(184, 50, 86, 0.3);
+
+  /* Пріоритети */
+  --priority-low-bg: #f0d3c9;
+  --priority-low-text: #4a2830;
+  --priority-medium-bg: #c86d85;
+  --priority-medium-text: #381a0f;
+  --priority-high-bg: #8c2641;
+  --priority-high-text: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  background-color: var(--bg-main);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.site-header {
+  background: #f5dcd3;
+  padding: 1.25rem 1rem;
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: 1.875rem;
+  color: var(--primary);
+  text-align: center;
+  font-weight: 800;
+}
+
+nav ul.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+nav a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  color: var(--primary-hover);
+  background-color: rgba(140, 38, 65, 0.08);
+}
+
+.add-wish-section {
+  background-color: var(--bg-card);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(140, 38, 65, 0.05);
+  margin-bottom: 2rem;
+}
+
+.add-wish-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+.wish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 450px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background-color: #fffaf8;
+  color: var(--text-main);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-shadow);
+}
+
+.btn-add {
+  align-self: flex-start;
+  background-color: var(--accent);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 12px var(--accent-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-add:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 18px var(--accent-shadow);
+}
+
+.btn-add:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px var(--accent-shadow);
+}
+
+.btn-add:focus-visible {
+  outline: 3px solid #f4a6ba;
+  outline-offset: 2px;
+}
+
+main {
+  padding: 1.5rem 1rem;
+}
+
+section h2 {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.card {
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--bg-card);
+  box-shadow: 0 4px 12px rgba(140, 38, 65, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(140, 38, 65, 0.12);
+}
+
+.priority-badge {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.priority-badge--low {
+  background-color: var(--priority-low-bg);
+  color: var(--priority-low-text);
+}
+
+.priority-badge--medium {
+  background-color: var(--priority-medium-bg);
+  color: var(--priority-medium-text);
+}
+
+.priority-badge--high {
+  background-color: var(--priority-high-bg);
+  color: var(--priority-high-text);
+}
+
+.card h3,
+.card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.card-price {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0.25rem 0;
+}
+
+.card--purchased {
+  opacity: 0.65;
+  background-color: #f7ede8;
+  box-shadow: none;
+}
+
+.card--purchased .card-title {
+  text-decoration: line-through;
+}
+
+aside.summary-box {
+  background-color: var(--bg-aside);
+  border: 2px solid #e8c4b8;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 0 1rem 2rem 1rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(140, 38, 65, 0.05);
+}
+
+aside.summary-box h2 {
+  font-size: 1.35rem;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+}
+
+aside.summary-box p {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+aside.summary-box .total-amount {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 0.5rem;
+}
+
+/* Крок 2 (CSS-варіант): Стилі для анімованого прогрес-бару «накопичено на купівлю» */
+.wishlist-progress-wrapper {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.wishlist-progress-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.wishlist-progress-track {
+  width: 100%;
+  height: 10px;
+  background-color: var(--border-color);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.wishlist-progress-bar {
+  height: 100%;
+  background-color: var(--accent);
+  width: 0%;
+  /* Плавна анімація зміни ширини заповнення залежно від накопиченої суми */
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+footer {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  background-color: #f2d9cf;
+}
+
+@media (min-width: 600px) {
+  .site-header {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+  }
+
+  .site-header h1 {
+    text-align: left;
+  }
+
+  nav ul.nav-list {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  main {
+    padding: 2rem;
+  }
+
+  aside.summary-box {
+    margin: 0 2rem 2rem 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 2rem;
+    padding: 2rem;
+    align-items: start;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  aside.summary-box {
+    margin: 0;
+    position: sticky;
+    top: 2rem;
+  }
+
+  .cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Стилі бюджету та кнопки видалення (раніше помилково були лише в media ≥1024px) */
+.budget-box {
+  margin: 16px 0;
+  text-align: left;
+}
+.budget-box input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e8c9c2;
+  border-radius: 10px;
+  background: #fffaf8;
+  font-size: 16px;
+}
+.progress-track {
+  height: 12px;
+  background: #ecd5cf;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e07a8f, #b92f57);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.progress-fill.complete {
+  background: linear-gradient(90deg, #e07a8f, #b92f57);
+}
+.progress-hint {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.btn-delete {
+  align-self: flex-start;
+  background-color: var(--accent);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 12px var(--accent-shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-delete:hover {
+  background-color: #9b2848;
+}
+
+/* ===== Роутинг ===== */
+nav a[aria-current="page"] {
+  color: var(--primary-hover);
+  background-color: rgba(140, 38, 65, 0.14);
+}
+
+a.btn-add {
+  text-decoration: none;
+}
+
+.card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-title a:hover,
+.card-title a:focus-visible {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.status-message {
+  margin: 1rem 0;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.db-error {
+  padding: 0.75rem;
+  background: #fde8e8;
+  color: #9b1c1c;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.wish-details {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(140, 38, 65, 0.05);
+}
+
+.wish-details h2 {
+  margin-bottom: 0.75rem;
+}
+
+.wish-details-img {
+  display: block;
+  margin: 1rem 0;
+}
+
+.wish-details-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.wish-details-list dt {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.wish-details-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wish-details-list .card-price {
+  margin: 0;
+}
+
+.wish-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.wish-details-actions .btn-add,
+.wish-details-actions .btn-delete {
+  margin: 0;
+}
+
+#not-found {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* ===== Фільтр «Лише куплені» ===== */
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-checkbox input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.filter-checkbox:hover {
+  border-color: var(--accent);
+}
+
+/* Кнопка «Видалити» в картці - на всю ширину картки */
+.card .btn-delete {
+  align-self: stretch;
+  width: 100%;
+  justify-content: center;
+}

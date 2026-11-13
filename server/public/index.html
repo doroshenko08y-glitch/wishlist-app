@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Список бажань</title>
+    <link rel="stylesheet" href="css/style.css" />
+
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel" src="js/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>Список бажань</h1>
+      <nav>
+        <ul class="nav-list">
+          <li>
+            <a href="#/" data-link data-scroll="add-wish-section"
+              >Додати бажання</a
+            >
+          </li>
+          <li>
+            <a href="#/" data-link data-scroll="wish-list-section"
+              >Мої бажання</a
+            >
+          </li>
+          <li><a href="#/purchased" data-link>Куплені</a></li>
+          <li>
+            <a href="#/" data-link data-scroll="summary-aside" data-stay
+              >Підсумок</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Корінь для React: усередині рендеряться <main id="app"> (маршрути) та <aside> (підсумок) -->
+    <div id="root"></div>
+
+    <footer>
+      <p>&copy; 2026 Навчальний проєкт «Список бажань».</p>
+    </footer>
+  </body>
+</html>
