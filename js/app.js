@@ -20,7 +20,7 @@ function enrichTodo(todo) {
   };
 }
 
-// Крок 4: Створення компонента елемента списку WishItem
+// Компонент картки бажання
 function WishItem({
   id,
   name,
@@ -65,7 +65,6 @@ function WishItem({
           cursor: "pointer",
         }}
       >
-        {/* Крок 6: Клік по чекбоксу викликає callback-prop onToggle */}
         <input
           type="checkbox"
           className="purchased-checkbox"
@@ -96,9 +95,92 @@ function WishItem({
   );
 }
 
+// Компонент форми додавання (керується станом React через події onChange)
+function WishForm({ onAddWish }) {
+  const [name, setName] = React.useState("");
+  const [price, setPrice] = React.useState("");
+  const [priority, setPriority] = React.useState("medium");
+  const [image, setImage] = React.useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    onAddWish({
+      id: Date.now(),
+      title: name.trim(),
+      price: price ? Number(price) : DEFAULT_PRICE,
+      priority: priority,
+      image: image.trim() || "https://via.placeholder.com/150",
+      completed: false,
+    });
+
+    // Скидання полів форми через стан
+    setName("");
+    setPrice("");
+    setPriority("medium");
+    setImage("");
+  };
+
+  return (
+    <section className="add-wish-section">
+      <h2>Додати бажання</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="wish-name">Назва речі:</label>
+          <input
+            type="text"
+            id="wish-name"
+            placeholder="Наприклад, Навушники"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="wish-price">Ціна (грн):</label>
+          <input
+            type="number"
+            id="wish-price"
+            placeholder="1500"
+            min="0"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="wish-priority">Пріоритет:</label>
+          <select
+            id="wish-priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+          >
+            <option value="low">Низький</option>
+            <option value="medium">Середній</option>
+            <option value="high">Високий</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label htmlFor="wish-img">Зображення речі (URL):</label>
+          <input
+            type="url"
+            id="wish-img"
+            placeholder="URL зображення"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+          />
+        </div>
+        <button type="submit" className="btn-add" style={{ marginTop: "1rem" }}>
+          Додати до списку
+        </button>
+      </form>
+    </section>
+  );
+}
+
 // Головний компонент додатку
 function WishListApp() {
-  // Крок 3: Перенесення даних у реактивний стан useState
   const [wishlist, setWishlist] = React.useState([]);
   const [statusMessage, setStatusMessage] = React.useState(
     "Завантаження списку бажань...",
@@ -129,7 +211,6 @@ function WishListApp() {
     loadData();
   }, []);
 
-  // Обробник зміни стану придбано (toggle)
   const handleToggle = (id) => {
     setWishlist((prevList) =>
       prevList.map((item) =>
@@ -138,7 +219,6 @@ function WishListApp() {
     );
   };
 
-  // Обробник зміни пріоритету
   const handleChangePriority = (id, newPriority) => {
     setWishlist((prevList) =>
       prevList.map((item) =>
@@ -147,18 +227,18 @@ function WishListApp() {
     );
   };
 
-  // Розрахунок бюджету та оновлення DOM для підсумку
+  const handleAddWish = (newItem) => {
+    setWishlist((prev) => [newItem, ...prev]);
+    setStatusMessage("");
+  };
+
+  // Декларативний розрахунок загальної вартості
+  const totalCost = wishlist
+    .filter((item) => !item.completed)
+    .reduce((sum, item) => sum + (item.price ?? DEFAULT_PRICE), 0);
+
+  // Консольні перевірки бюджету без DOM-маніпуляцій
   React.useEffect(() => {
-    const totalCost = wishlist
-      .filter((item) => !item.completed)
-      .reduce((sum, item) => sum + (item.price ?? DEFAULT_PRICE), 0);
-
-    const totalPriceElem = document.querySelector("#total-price");
-    if (totalPriceElem) {
-      totalPriceElem.textContent = `${totalCost.toLocaleString()} грн`;
-    }
-
-    // Перевірка бюджету в консолі
     console.log(
       `Перевірка доступності у межах бюджету (${CURRENT_BUDGET} грн)`,
     );
@@ -173,80 +253,66 @@ function WishListApp() {
     }
   }, [wishlist]);
 
-  // Обробник сабміту форми додавання нового бажання
-  React.useEffect(() => {
-    const form = document.querySelector("#wish-form");
-    if (!form) return;
-
-    const handleFormSubmit = (e) => {
-      e.preventDefault();
-      const nameInput = document.querySelector("#wish-name");
-      const priceInput = document.querySelector("#wish-price");
-      const priorityInput = document.querySelector("#wish-priority");
-      const imgInput = document.querySelector("#wish-img");
-
-      const newItem = {
-        id: Date.now(), // унікальний id для нових елементів
-        title: nameInput.value.trim(),
-        price: Number(priceInput.value),
-        priority: priorityInput.value,
-        image: imgInput.value.trim() || "https://via.placeholder.com/150",
-        completed: false,
-      };
-
-      setWishlist((prev) => [newItem, ...prev]);
-      setStatusMessage("");
-      form.reset();
-    };
-
-    form.addEventListener("submit", handleFormSubmit);
-    return () => form.removeEventListener("submit", handleFormSubmit);
-  }, []);
-
   return (
-    <div>
-      <div
-        style={{
-          margin: "1rem 0",
-          fontWeight: "600",
-          color: statusMessage.includes("недоступний")
-            ? "#b83256"
-            : "var(--primary)",
-        }}
-      >
-        {statusMessage}
-      </div>
+    <div className="page-wrapper">
+      <main>
+        {/* Форма як React-компонент */}
+        <WishForm onAddWish={handleAddWish} />
 
-      <button
-        className="btn-add"
-        style={{ marginBottom: "1rem", display: "inline-block" }}
-        onClick={loadData}
-        disabled={isLoading}
-      >
-        Оновити список
-      </button>
+        <section id="wish-list-section">
+          <h2>Мої бажання</h2>
+          {statusMessage && (
+            <div
+              style={{
+                margin: "1rem 0",
+                fontWeight: "600",
+                color: statusMessage.includes("недоступний")
+                  ? "#b83256"
+                  : "var(--primary)",
+              }}
+            >
+              {statusMessage}
+            </div>
+          )}
 
-      {/* Крок 5: Рендер циклом через .map() з унікальним key */}
-      <div className="cards">
-        {wishlist.map((item) => (
-          <WishItem
-            key={item.id}
-            id={item.id}
-            name={item.title}
-            price={item.price}
-            priority={item.priority}
-            completed={item.completed}
-            image={item.image}
-            onToggle={() => handleToggle(item.id)}
-            onChangePriority={handleChangePriority}
-          />
-        ))}
-      </div>
+          <button
+            className="btn-add"
+            style={{ marginBottom: "1rem", display: "inline-block" }}
+            onClick={loadData}
+            disabled={isLoading}
+          >
+            Оновити список
+          </button>
+
+          <div className="cards">
+            {wishlist.map((item) => (
+              <WishItem
+                key={item.id}
+                id={item.id}
+                name={item.title}
+                price={item.price}
+                priority={item.priority}
+                completed={item.completed}
+                image={item.image}
+                onToggle={() => handleToggle(item.id)}
+                onChangePriority={handleChangePriority}
+              />
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* Підсумок рендериться декларативно через стан */}
+      <aside id="summary-aside" className="summary-box">
+        <h2>Підсумкова сума</h2>
+        <p>Загальна вартість усіх бажань:</p>
+        <p className="total-amount">{totalCost.toLocaleString()} грн</p>
+      </aside>
     </div>
   );
 }
 
-// Монтування React-додатку в корінь
+// Монтування в єдиний корінь
 const rootElement = document.querySelector("#root");
 if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
