@@ -179,9 +179,12 @@ function WishItem({
       </select>
 
       <h3 className="card-title">
-        <a href={`#/wishes/${id}`} data-link>
-          {title}
-        </a>
+        {/* ВРАЗЛИВІСТЬ (навчальна): назва вставляється як HTML без екранування */}
+        <a
+          href={`#/wishes/${id}`}
+          data-link
+          dangerouslySetInnerHTML={{ __html: title }}
+        />
       </h3>
       <img
         src={url || DEFAULT_IMAGE}
@@ -590,7 +593,8 @@ function WishDetailsView({ params, wishlist, isReady, handlers }) {
       <a href="#/" data-link className="back-link">
         ← До списку
       </a>
-      <h2>{item.title}</h2>
+      {/* ВРАЗЛИВІСТЬ (навчальна) */}
+      <h2 dangerouslySetInnerHTML={{ __html: item.title }} />
 
       <span className={`priority-badge priority-badge--${priority}`}>
         {PRIORITY_LABELS[priority]}
@@ -612,13 +616,8 @@ function WishDetailsView({ params, wishlist, isReady, handlers }) {
 
         <dt>Посилання (url)</dt>
         <dd>
-          {isHttpUrl(item.url) ? (
-            <a href={item.url} target="_blank" rel="noopener noreferrer">
-              {item.url}
-            </a>
-          ) : (
-            item.url
-          )}
+          {/* ВРАЗЛИВІСТЬ (навчальна): url підставляється в href без перевірки схеми */}
+          <a href={item.url}>{item.url}</a>
         </dd>
 
         <dt>Статус</dt>
