@@ -1,7 +1,7 @@
-console.log("js/app.js підключено");
+console.log("js/app.js підключено — ВИПРАВЛЕНА ВЕРСІЯ");
 
 // Локальний API нашого сервера (замість зовнішнього jsonplaceholder)
-const API_URL = "/api/wishes";
+const API_URL = "data/wishes.json"; // GitHub Pages: статичний файл замість Express API
 const PRIORITIES = ["low", "medium", "high"];
 const PRIORITY_LABELS = {
   high: "Високий пріоритет",
@@ -10,7 +10,24 @@ const PRIORITY_LABELS = {
 };
 const DEFAULT_PRICE = 1500;
 // Єдине місце, де задано картинку за замовчуванням (шлях відносно теки public/)
-const DEFAULT_IMAGE = "/assets/img/placeholder.png";
+const DEFAULT_IMAGE = "assets/img/placeholder.svg"; // відносний шлях: сайт живе в /назва-репозиторію/
+
+// Безпека (XSS): дозволяємо лише http(s)-адреси та відносні шляхи.
+// Схеми javascript:, data:, vbscript: тощо замінюються на картинку за замовчуванням.
+// Тип зображення/посилання в localStorage, IndexedDB чи API може бути підроблений,
+// тому перевірка виконується в одній точці (normalizeWishItem) і ще раз при рендері.
+function sanitizeUrl(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return DEFAULT_IMAGE;
+  try {
+    const u = new URL(raw, window.location.href);
+    return u.protocol === "http:" || u.protocol === "https:"
+      ? raw
+      : DEFAULT_IMAGE;
+  } catch (error) {
+    return DEFAULT_IMAGE;
+  }
+}
 
 const LS_STORAGE_KEY = "wishlist_items_ls";
 const LS_MIGRATED_FLAG = "wishlist_migrated_to_idb";
@@ -24,7 +41,7 @@ function normalizeWishItem(item) {
     id: item.id ?? Date.now(),
     title: item.title || item.name || "Без назви",
     price: Number(item.price ?? DEFAULT_PRICE),
-    url: item.url || item.image || DEFAULT_IMAGE,
+    url: sanitizeUrl(item.url || item.image),
     purchased: Boolean(item.purchased ?? item.completed ?? false),
     priority:
       item.priority || (item.purchased || item.completed ? "low" : "medium"),
@@ -179,15 +196,12 @@ function WishItem({
       </select>
 
       <h3 className="card-title">
-        {/* ВРАЗЛИВІСТЬ (навчальна): назва вставляється як HTML без екранування */}
-        <a
-          href={`#/wishes/${id}`}
-          data-link
-          dangerouslySetInnerHTML={{ __html: title }}
-        />
+        <a href={`#/wishes/${id}`} data-link>
+          {title}
+        </a>
       </h3>
       <img
-        src={url || DEFAULT_IMAGE}
+        src={sanitizeUrl(url)}
         alt={title}
         onError={(e) => {
           // якщо файл не знайдено - показуємо картинку за замовчуванням (без зациклення)
@@ -234,7 +248,7 @@ function WishForm({ onAddWish }) {
       title: name.trim(),
       price: price ? Number(price) : DEFAULT_PRICE,
       priority,
-      url: url.trim() || DEFAULT_IMAGE,
+      url: sanitizeUrl(url),
       purchased: false,
     });
 
@@ -254,6 +268,7 @@ function WishForm({ onAddWish }) {
           placeholder="Наприклад, Навушники"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          maxLength={100}
           required
         />
       </div>
@@ -593,15 +608,14 @@ function WishDetailsView({ params, wishlist, isReady, handlers }) {
       <a href="#/" data-link className="back-link">
         ← До списку
       </a>
-      {/* ВРАЗЛИВІСТЬ (навчальна) */}
-      <h2 dangerouslySetInnerHTML={{ __html: item.title }} />
+      <h2>{item.title}</h2>
 
       <span className={`priority-badge priority-badge--${priority}`}>
         {PRIORITY_LABELS[priority]}
       </span>
 
       <img
-        src={item.url}
+        src={sanitizeUrl(item.url)}
         alt={item.title}
         className="wish-details-img"
         onError={(e) => {
@@ -616,8 +630,13 @@ function WishDetailsView({ params, wishlist, isReady, handlers }) {
 
         <dt>Посилання (url)</dt>
         <dd>
-          {/* ВРАЗЛИВІСТЬ (навчальна): url підставляється в href без перевірки схеми */}
-          <a href={item.url}>{item.url}</a>
+          {isHttpUrl(item.url) ? (
+            <a href={item.url} target="_blank" rel="noopener noreferrer">
+              {item.url}
+            </a>
+          ) : (
+            item.url
+          )}
         </dd>
 
         <dt>Статус</dt>
